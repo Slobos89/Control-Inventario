@@ -1,0 +1,30 @@
+{% extends "core/base.html" %}
+{% block titlepage %}Panel Jefe de Farmacia{% endblock %}
+
+{% block principal %}
+<div class="container mt-4">
+  <h4>Panel Jefe de Farmacia</h4>
+  <div class="row">
+    <div class="col-md-4">
+      <div class="card p-3">
+        <h6>Stock fármacos bajos</h6>
+        <p class="mb-0">Amoxicilina, Insulina</p>
+      </div>
+    </div>
+
+    <div class="col-md-4">
+      <div class="card p-3">
+        <h6>Solicitudes pendientes</h6>
+        <p class="mb-0">1 solicitud</p>
+      </div>
+    </div>
+
+    <div class="col-md-4">
+      <div class="card p-3">
+        <h6>Dispensaciones hoy</h6>
+        <h2>48</h2>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

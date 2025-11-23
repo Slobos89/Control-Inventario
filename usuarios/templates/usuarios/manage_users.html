@@ -1,0 +1,55 @@
+{% extends "core/base.html" %}
+{% block titlepage %}Gestionar Usuarios{% endblock %}
+
+{% block principal %}
+<table class="table table-striped">
+<thead>
+    <tr>
+        <th>Usuario</th>
+        <th>Nombre</th>
+        <th>Rol</th>
+        <th>Estado</th>
+        <th>Acciones</th>
+    </tr>
+</thead>
+
+<tbody>
+  {% for u in usuarios %}
+  <tr>
+    <td>{{ u.username }}</td>
+    <td>{{ u.first_name }} {{ u.last_name }}</td>
+    <td>
+      {% if u.perfil.rol %}
+        {{ u.perfil.get_rol_display }}
+      {% else %}
+        <span class="text-danger fw-bold">Sin rol asignado</span>
+      {% endif %}
+    </td>
+    <td>
+      {% if u.is_active %}
+        <span class="badge bg-success">Activo</span>
+      {% else %}
+        <span class="badge bg-secondary">Inactivo</span>
+      {% endif %}
+    </td>
+    <td>
+      <a href="{% url 'editar_usuario' u.id %}" class="btn btn-sm btn-primary">Editar</a>
+
+      {% if u.is_active %}
+        <a href="{% url 'toggle_user_status' u.id %}" class="btn btn-sm btn-danger">
+          Desactivar
+        </a>
+      {% else %}
+        <a href="{% url 'toggle_user_status' u.id %}" class="btn btn-sm btn-success">
+          Activar
+        </a>
+      {% endif %}
+    </td>
+  </tr>
+
+  {% empty %}
+  <tr><td colspan="5" class="text-center">No hay usuarios registrados.</td></tr>
+  {% endfor %}
+</tbody>
+</table>
+{% endblock %}

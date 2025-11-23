@@ -1,0 +1,36 @@
+{% extends "core/base.html" %}
+{% block titlepage %}Dispensación{% endblock %}
+
+{% block principal %}
+<div class="container mt-4">
+  <h4>Dispensación de medicamentos</h4>
+
+  <form class="card p-3" method="post" action="{% url 'dispense' %}">
+    {% csrf_token %}
+    <div class="row mb-2">
+      <div class="col-md-4"><label class="form-label">N° Receta</label><input class="form-control" name="receta"></div>
+      <div class="col-md-4"><label class="form-label">Paciente (RUT)</label><input class="form-control" name="paciente"></div>
+      <div class="col-md-4"><label class="form-label">Funcionario</label><input class="form-control" value="{{ request.user.username }}" disabled></div>
+    </div>
+
+    <hr>
+    <h6>Detalle</h6>
+    <table class="table">
+      <thead><tr><th>Fármaco</th><th>Dosis</th><th>Cantidad</th><th>Acción</th></tr></thead>
+      <tbody>
+        <tr>
+          <td>Paracetamol 500mg</td>
+          <td>1 cada 8h</td>
+          <td><input class="form-control" value="10" name="cantidad_1"></td>
+          <td><button class="btn btn-sm btn-danger" type="button">Quitar</button></td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="d-flex justify-content-between">
+      <button class="btn btn-outline-secondary">Reimprimir receta</button>
+      <button class="btn btn-primary" type="submit">Confirmar dispensación</button>
+    </div>
+  </form>
+</div>
+{% endblock %}

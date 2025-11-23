@@ -1,0 +1,17 @@
+{% extends "core/base.html" %}
+{% block titlepage %}Editar Usuario{% endblock %}
+
+{% block principal %}
+<div class="container mt-4">
+    <h3>Editar Usuario: {{ usuario.username }}</h3>
+    <hr>
+
+    <form method="post">
+        {% csrf_token %}
+        {{ form.as_p }}
+
+        <button class="btn btn-primary">Guardar cambios</button>
+        <a href="{% url 'manage_users' %}" class="btn btn-secondary">Cancelar</a>
+    </form>
+</div>
+{% endblock %}

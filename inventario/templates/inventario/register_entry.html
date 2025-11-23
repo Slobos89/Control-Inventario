@@ -1,0 +1,37 @@
+{% extends "core/base.html" %}
+{% block titlepage %}Registrar Ingreso{% endblock %}
+
+{% block principal %}
+<div class="container mt-4">
+  <h4>Registrar Ingreso por Factura</h4>
+
+  <form class="card p-3 mt-3" method="post" action="{% url 'register_entry' %}">
+    {% csrf_token %}
+    <div class="row mb-3">
+      <div class="col-md-3"><label class="form-label">Número factura</label><input class="form-control" name="numero"></div>
+      <div class="col-md-3"><label class="form-label">Fecha</label><input class="form-control" type="date" name="fecha"></div>
+      <div class="col-md-6"><label class="form-label">Proveedor</label><input class="form-control" name="proveedor"></div>
+    </div>
+
+    <hr>
+    <h6>Detalle de artículos</h6>
+    <table class="table">
+      <thead><tr><th>Insumo</th><th>Cantidad</th><th>Lote</th><th>Vencimiento</th><th></th></tr></thead>
+      <tbody id="items">
+        <tr>
+          <td><input class="form-control" placeholder="nombre insumo" name="insumo_1"></td>
+          <td><input class="form-control" type="number" value="0" name="cantidad_1"></td>
+          <td><input class="form-control" name="lote_1"></td>
+          <td><input class="form-control" type="date" name="vencimiento_1"></td>
+          <td><button class="btn btn-sm btn-danger" type="button">Quitar</button></td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="d-flex justify-content-end">
+      <button class="btn btn-secondary me-2" type="reset">Limpiar</button>
+      <button class="btn btn-primary" type="submit">Registrar factura</button>
+    </div>
+  </form>
+</div>
+{% endblock %}

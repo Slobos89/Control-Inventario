@@ -1,0 +1,32 @@
+{% extends "core/base.html" %}
+{% block titlepage %}Revisión de Productos Recibidos{% endblock %}
+
+{% block principal %}
+<div class="container mt-4">
+  <h4>Revisión de productos recibidos</h4>
+
+  <div class="card p-3 mt-3">
+    <div class="row mb-2">
+      <div class="col-md-4"><strong>Factura:</strong> FAC-2025-234</div>
+      <div class="col-md-4"><strong>Proveedor:</strong> Distribuidora Med</div>
+      <div class="col-md-4"><strong>Fecha:</strong> 2025-10-01</div>
+    </div>
+
+    <table class="table mt-3">
+      <thead><tr><th>Insumo</th><th>Facturado</th><th>Recibido</th><th>Observaciones</th></tr></thead>
+      <tbody>
+        <tr><td>Guantes Nitrilo</td><td>100</td><td><input class="form-control" value="100" name="recibido_1"></td><td></td></tr>
+        <tr><td>Gasas 10x10</td><td>200</td><td><input class="form-control" value="180" name="recibido_2"></td><td><input class="form-control" placeholder="ej: faltante 20" name="obs_2"></td></tr>
+      </tbody>
+    </table>
+
+    <div class="d-flex justify-content-between">
+      <button class="btn btn-danger">Registrar discrepancia y notificar</button>
+      <div>
+        <button class="btn btn-outline-secondary">Aceptar ingreso parcial</button>
+        <button class="btn btn-primary">Confirmar y actualizar inventario</button>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

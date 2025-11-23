@@ -1,0 +1,42 @@
+{% extends "core/base.html" %}
+{% block titlepage %}Reportes{% endblock %}
+
+{% block principal %}
+<div class="container mt-4">
+  <h4>Reportes y estadísticas</h4>
+
+  <form class="row g-3 align-items-end mb-3" method="get" action="{% url 'reports' %}">
+    <div class="col-md-3">
+      <label class="form-label">Fecha desde</label>
+      <input class="form-control" type="date" name="from">
+    </div>
+
+    <div class="col-md-3">
+      <label class="form-label">Fecha hasta</label>
+      <input class="form-control" type="date" name="to">
+    </div>
+
+    <div class="col-md-3">
+      <label class="form-label">Tipo de reporte</label>
+      <select class="form-select" name="type">
+        <option value="movimiento">Movimiento insumos</option>
+        <option value="consumo">Consumo farmacia</option>
+      </select>
+    </div>
+
+    <div class="col-md-3">
+      <button class="btn btn-primary">Generar</button>
+    </div>
+  </form>
+
+  <div class="card p-3">
+    <h6>Resultados</h6>
+    <table class="table table-sm">
+      <thead><tr><th>Fecha</th><th>Tipo</th><th>Descripción</th><th>Acciones</th></tr></thead>
+      <tbody>
+        <tr><td>2025-11-01</td><td>Entrada</td><td>Guantes - 500</td><td><button class="btn btn-sm btn-outline-secondary">Exportar</button></td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
