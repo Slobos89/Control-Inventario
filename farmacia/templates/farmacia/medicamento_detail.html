@@ -1,0 +1,20 @@
+{% extends "core/base.html" %}
+{% block titlepage %}Detalle Medicamento{% endblock %}
+
+{% block principal %}
+<div class="container mt-3">
+  <h4>{{ medicamento.nombre }} ({{ medicamento.codigo }})</h4>
+  <p>Stock: {{ medicamento.stock }} — Stock crítico: {{ medicamento.stock_critico }}</p>
+
+  <a class="btn btn-outline-primary mb-2" href="{% url 'farmacia:movimiento_nuevo' %}">Registrar movimiento</a>
+
+  <h6>Últimos movimientos</h6>
+  <ul class="list-group">
+    {% for mov in movimientos %}
+    <li class="list-group-item">{{ mov.fecha }} — {{ mov.tipo }} — {{ mov.cantidad }} — por {{ mov.usuario }}</li>
+    {% empty %}
+    <li class="list-group-item">Sin movimientos</li>
+    {% endfor %}
+  </ul>
+</div>
+{% endblock %}

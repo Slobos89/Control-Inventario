@@ -1,0 +1,130 @@
+{% extends "core/base.html" %}
+{% block titlepage %}Dashboard{% endblock %}
+
+{% block principal %}
+
+<div class="container-fluid mt-3">
+  <div class="row">
+    <div class="col-md-3">
+      {% if user.perfil.rol == "ADMIN" %}
+      <div class="card card-compact p-3 mb-3">
+        <h6>Usuarios activos</h6>
+        <h2>{{ total_usuarios }}</h2>
+        <p class="small">Última actualización: hoy</p>
+      </div>
+      {% endif %}
+      <div class="card card-compact p-3 mb-3">
+        <h6>Insumos críticos</h6>
+        <h2>{{ insumos_criticos }}</h2>
+      </div>
+      <div class="card card-compact p-3 mb-3">
+        <h6>Farmacos criticos</h6>
+        <h2>{{ farmacos_criticos }}</h2>
+      </div>
+      <div class="card card-compact p-3">
+        <h6>Solicitudes pendientes</h6>
+        <h2>3</h2>
+      </div>
+    </div>
+
+    <div class="col-md-9">
+      <div class="card p-3 mb-3">
+        <h5>Resumen de actividad</h5>
+        <div class="row mt-3">
+          <div class="col-md-6">
+            <canvas id="chart1" style="max-height:200px"></canvas>
+          </div>
+          <div class="col-md-6">
+            <h6>Últimos movimientos</h6>
+            <ul class="list-group">
+
+              {% for m in ult_mov_bodega %}
+              <li class="list-group-item">
+                🏷️ Bodega – {{ m.insumo.nombre }} ({{ m.tipo }}) - {{ m.cantidad }} 
+              </li>
+              {% endfor %}
+
+              {% for m in ult_mov_farmacia %}
+              <li class="list-group-item">
+                💊 Farmacia – {{ m.medicamento.nombre }} ({{ m.tipo }}) - {{ m.cantidad }}
+              </li>
+              {% endfor %}
+
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <div class="card p-3">
+        <h6>Accesos rápidos</h6>
+        <div class="d-flex gap-2 mt-2">
+          {% if user.perfil.rol == "ADMIN" %}
+          <a class="btn btn-outline-primary" href="{% url 'manage_users' %}">Gestionar usuarios</a>
+          {% endif %}
+          <a class="btn btn-outline-primary" href="{% url 'inventory_list' %}">Ver inventario</a>
+          <a class="btn btn-outline-primary" href="{% url 'reports' %}">Generar reportes</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% if user.perfil.rol == "JEFE_BODEGA" %}
+
+<div class="container-fluid mt-3">
+  <h4>Panel Jefe de Bodega</h4>
+  <div class="row mt-3">
+    <div class="col-md-6">
+      <div class="card p-3">
+        <h6>Facturas por revisar</h6>
+        <ul class="list-group list-group-flush">
+          <li class="list-group-item">FAC-2025-234 <span class="badge bg-warning float-end">Pendiente</span></li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="col-md-6">
+      <div class="card p-3">
+        <h6>Discrepancias abiertas</h6>
+        <p class="mb-0">2 casos por resolución</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="card mt-3 p-3">
+    <h6>Reportes recientes</h6>
+    <a class="btn btn-outline-primary" href="{% url 'reports' %}">Ver reportes</a>
+  </div>
+</div>
+
+{% elif user.perfil.rol == "JEFE_FARMACIA" %}
+<div class="container-fluid mt-3">
+  <h4>Panel Jefe de Farmacia</h4>
+  <div class="row">
+    <div class="col-md-4">
+      <div class="card p-3">
+        <h6>Stock fármacos bajos</h6>
+        <p class="mb-0">Amoxicilina, Insulina</p>
+      </div>
+    </div>
+
+    <div class="col-md-4">
+      <div class="card p-3">
+        <h6>Solicitudes pendientes</h6>
+        <p class="mb-0">1 solicitud</p>
+      </div>
+    </div>
+
+    <div class="col-md-4">
+      <div class="card p-3">
+        <h6>Dispensaciones hoy</h6>
+        <h2>{{ dispensaciones_hoy }}</h2>
+      </div>
+    </div>
+  </div>
+</div>
+{% endif %}
+
+</div>
+
+{% endblock %}

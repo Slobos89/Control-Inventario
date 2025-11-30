@@ -1,0 +1,16 @@
+{% extends "core/base.html" %}
+{% block titlepage %}Nuevo Medicamento{% endblock %}
+
+{% block principal %}
+<div class="container mt-3">
+  <h4>Crear Medicamento</h4>
+
+  <form method="POST">
+    {% csrf_token %}
+    {{ form.as_p }}
+
+    <button type="submit" class="btn btn-primary">Guardar</button>
+    <a href="{% url 'farmacia:medicamentos_lista' %}" class="btn btn-secondary">Cancelar</a>
+  </form>
+</div>
+{% endblock %}

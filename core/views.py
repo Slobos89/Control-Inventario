@@ -1,24 +1,61 @@
 from django.shortcuts import render, redirect
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.models import User
+from django.db.models import F, Sum
+from django.utils.timezone import now
+from datetime import date
 from django.contrib import messages
+from django.contrib.auth.decorators import login_required
+
+from inventario.models import Insumo
+from inventario.models import Movimiento as MovimientoBodega
+from farmacia.models import Medicamento, MovimientoFarmacia
 
 def index(request):
     return render(request, "core/index.html")
 
-def admin_dashboard(request):
-    # Excluir al superusuario
-    total_usuarios = User.objects.filter(is_superuser=False).count()
+@login_required
+def dashboard(request):
 
-    return render(request, "core/admin_dashboard.html", {
-        "total_usuarios": total_usuarios
-    })
+    rol = request.user.perfil.rol
 
-def jefe_bodega_dashboard(request):
-    return render(request, "core/jefe_bodega_dashboard.html")
+    # ---------------------------
+    # MÉTRICAS GENERALES
+    # ---------------------------
 
-def jefe_farmacia_dashboard(request):
-    return render(request, "core/jefe_farmacia_dashboard.html")
+    total_usuarios = User.objects.count() if rol == "ADMIN" else None
+
+    # Insumos críticos en bodega
+    insumos_criticos = Insumo.objects.filter(
+        stock__lt=F("stock_minimo")
+    ).count()
+
+    # Fármacos críticos en farmacia
+    farmacos_criticos = Medicamento.objects.filter(
+        stock__lt=5
+    ).count()
+
+    # Últimos movimientos (unificados)
+    ult_mov_bodega = MovimientoBodega.objects.order_by("-fecha")[:5]
+    ult_mov_farmacia = MovimientoFarmacia.objects.order_by("-fecha")[:5]
+
+    # Dispensaciones HOY (solo farmacia)
+    dispensaciones_hoy = MovimientoFarmacia.objects.filter(
+        tipo="SALIDA",
+        fecha__date=date.today()
+    ).aggregate(total=Sum("cantidad"))["total"] or 0
+
+    contexto = {
+        "rol": rol,
+        "total_usuarios": total_usuarios,
+        "insumos_criticos": insumos_criticos,
+        "farmacos_criticos": farmacos_criticos,
+        "ult_mov_bodega": ult_mov_bodega,
+        "ult_mov_farmacia": ult_mov_farmacia,
+        "dispensaciones_hoy": dispensaciones_hoy,
+    }
+
+    return render(request, "core/dashboard.html", contexto)
 
 def reports(request):
     return render(request, "core/reports.html")

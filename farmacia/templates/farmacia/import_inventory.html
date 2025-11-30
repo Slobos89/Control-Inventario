@@ -1,0 +1,38 @@
+{% extends "core/base.html" %}
+{% block titlepage %}Importar Inventario Farmacia{% endblock %}
+
+{% block principal %}
+<div class="container mt-4">
+
+    <h4 class="mb-3">Importar Inventario de Farmacia desde CSV</h4>
+
+    <!-- Mensajes de éxito o error -->
+    {% if messages %}
+        {% for msg in messages %}
+            <div class="alert alert-{{ msg.tags }}">{{ msg }}</div>
+        {% endfor %}
+    {% endif %}
+
+    <div class="card p-4 shadow-sm">
+
+        <form method="POST" enctype="multipart/form-data">
+            {% csrf_token %}
+
+            <div class="mb-3">
+                <label class="form-label">Seleccionar archivo CSV:</label>
+                <input type="file" name="archivo" class="form-control" required>
+            </div>
+
+            <button type="submit" class="btn btn-primary">
+                Importar Inventario
+            </button>
+
+            <a href="{% url 'farmacia:medicamentos_lista' %}" class="btn btn-secondary ms-2">
+                Volver
+            </a>
+
+        </form>
+
+    </div>
+</div>
+{% endblock %}

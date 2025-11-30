@@ -1,0 +1,45 @@
+{% extends "core/base.html" %}
+{% block titlepage %}Inventario Farmacia{% endblock %}
+
+{% block principal %}
+<div class="container mt-3">
+  <div class="d-flex justify-content-between mb-2">
+    <h4>Inventario Farmacia</h4>
+    <div>
+      {% if request.user.perfil.rol in "ADMIN JEFE_FARMACIA" %}
+      <a class="btn btn-success" href="{% url 'farmacia:crear' %}">Nuevo medicamento</a>
+      <a class="btn btn-outline-secondary" href="{% url 'farmacia:import_inventory' %}">Importar Inventario</a>
+      {% endif %}
+    </div>
+    
+  </div>
+
+  <div class="row mb-3">
+    <div class="col-md-3"><input class="form-control" placeholder="Buscar por nombre"></div>
+    <div class="col-md-2"><select class="form-select"><option>Todas categorías</option></select></div>
+    <div class="col-md-2"><select class="form-select"><option>Ordenar: Stock</option></select></div>
+  </div>
+
+  <table class="table table-striped">
+    <thead><tr><th>Código</th><th>Nombre</th><th>Stock</th><th>Vencimiento</th><th>Acciones</th></tr></thead>
+    <tbody>
+      {% for m in medicamentos %}
+      <tr>
+        <td>{{ m.codigo }}</td>
+        <td>{{ m.nombre }}</td>
+        <td>{{ m.stock }}</td>
+        <td>{% if m.fecha_vencimiento %}{{ m.fecha_vencimiento|date:"Y-m-d" }}{% endif %}</td>
+        <td>
+          <a class="btn btn-sm btn-outline-primary" href="{% url 'farmacia:detalle' m.pk %}">Detalle</a>
+          {% if request.user.perfil.rol in "ADMIN JEFE_FARMACIA" %}
+          <a class="btn btn-sm btn-outline-secondary" href="#">Editar</a>
+          {% endif %}
+        </td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="5">No hay medicamentos.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}
