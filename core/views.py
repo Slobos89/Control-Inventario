@@ -6,8 +6,9 @@ from django.utils.timezone import now
 from datetime import date
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from django.db import models 
 
-from inventario.models import Insumo
+from inventario.models import Insumo, Movimiento
 from inventario.models import Movimiento as MovimientoBodega
 from farmacia.models import Medicamento, MovimientoFarmacia
 
@@ -27,16 +28,23 @@ def dashboard(request):
 
     # Insumos críticos en bodega
     insumos_criticos = Insumo.objects.filter(
-        stock__lt=F("stock_minimo")
+        stock__lte=F("stock_minimo")
     ).count()
+
+    # insumos criticos en lista
+
+    insumos_criticos_lista = Insumo.objects.filter(stock__lte=models.F("stock_minimo"))
 
     # Fármacos críticos en farmacia
     farmacos_criticos = Medicamento.objects.filter(
-        stock__lt=5
+        stock__lte=F("stock_critico")
     ).count()
 
+    # Fármacos críticos en lista
+    farmacos_criticos_lista = Medicamento.objects.filter(stock__lte=models.F('stock_critico'))
+
     # Últimos movimientos (unificados)
-    ult_mov_bodega = MovimientoBodega.objects.order_by("-fecha")[:5]
+    ult_mov_bodega = Movimiento.objects.order_by("-fecha")[:5]
     ult_mov_farmacia = MovimientoFarmacia.objects.order_by("-fecha")[:5]
 
     # Dispensaciones HOY (solo farmacia)
@@ -49,7 +57,9 @@ def dashboard(request):
         "rol": rol,
         "total_usuarios": total_usuarios,
         "insumos_criticos": insumos_criticos,
+        "insumos_criticos_lista": insumos_criticos_lista,
         "farmacos_criticos": farmacos_criticos,
+        "farmacos_criticos_lista": farmacos_criticos_lista,
         "ult_mov_bodega": ult_mov_bodega,
         "ult_mov_farmacia": ult_mov_farmacia,
         "dispensaciones_hoy": dispensaciones_hoy,

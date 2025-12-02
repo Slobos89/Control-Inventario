@@ -6,9 +6,9 @@
   <div class="d-flex justify-content-between align-items-center mb-3">
     <h4>Inventario de Insumos Médicos</h4>
     <div>
-      <a class="btn btn-outline-primary me-2" href="{% url 'register_entry' %}">Nuevo ingreso</a>
+      <a class="btn btn-outline-primary me-2" href="{% url 'inventario:register_entry' %}">Nuevo ingreso</a>
       <a class="btn btn-outline-secondary" href="{% url 'reports' %}">Exportar</a>
-      <a class="btn btn-outline-secondary" href="{% url 'import_inventory' %}">Importar Inventario</a>
+      <a class="btn btn-outline-secondary" href="{% url 'inventario:import_inventory' %}">Importar Inventario</a>
     </div>
   </div>
 

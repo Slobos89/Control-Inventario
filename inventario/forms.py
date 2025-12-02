@@ -1,5 +1,10 @@
 from django import forms
-from .models import Insumo, FacturaIngreso, ItemFactura, SolicitudReposicion
+from django.forms import formset_factory, inlineformset_factory
+from .models import (
+    FacturaIngreso,
+    ItemFactura,
+    Insumo
+)
 
 class FacturaIngresoForm(forms.ModelForm):
     class Meta:
@@ -7,16 +12,10 @@ class FacturaIngresoForm(forms.ModelForm):
         fields = ["numero", "fecha", "proveedor"]
 
 
-class ItemFacturaForm(forms.ModelForm):
-    class Meta:
-        model = ItemFactura
-        fields = ["insumo", "cantidad", "lote", "vencimiento"]
 
 
-class SolicitudForm(forms.ModelForm):
-    class Meta:
-        model = SolicitudReposicion
-        fields = ["area"]
+
 
 class UploadFileForm(forms.Form):
     archivo = forms.FileField(label="Archivo CSV o Excel")
+

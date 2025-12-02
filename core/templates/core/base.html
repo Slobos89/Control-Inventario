@@ -80,17 +80,26 @@
 
       {% if request.user.perfil.rol == "JEFE_BODEGA" %}
       <li class="nav-item">
-        <a class="nav-link {% if current == 'inventory_list' %}active{% endif %}" href="{% url 'inventory_list' %}">Inventario</a>
+        <a class="nav-link {% if current == 'inventory_list' %}active{% endif %}" href="{% url 'inventario:inventory_list' %}">Inventario</a>
       </li>
       {% endif %}
 
       <li class="nav-item">
-        <a class="nav-link {% if current == 'register_entry' %}active{% endif %}" href="{% url 'register_entry' %}">Ingresos</a>
+        <a class="nav-link {% if current == 'register_entry' %}active{% endif %}" href="{% url 'inventario:register_entry' %}">Ingresos</a>
       </li>
 
       <li class="nav-item">
-        <a class="nav-link {% if current == 'requests' %}active{% endif %}" href="{% url 'requests' %}">Solicitudes</a>
+        <a class="nav-link {% if current == 'solicitudes_listar' %}active{% endif %}" href="{% url 'inventario:solicitudes_listar' %}">Requests</a>
       </li>
+      {% if request.user.perfil.rol == "FUNC_FARMACIA" or request.user.perfil.rol == "JEFE_FARMACIA" %}
+      <li class="nav-item">
+        <a class="nav-link {% if current == 'dispense' %}active{% endif %}" href="{% url 'farmacia:dispense' %}">Dispensación</a>
+      </li>
+
+      <li class="nav-item">
+        <a class="nav-link {% if current == 'solicitudes_mias' %}active{% endif %}" href="{% url 'farmacia:solicitudes_mias' %}">Mis Solicitudes</a>
+      </li>
+      {% endif %}
     
       <li class="nav-item">
         <a class="nav-link {% if current == 'reports' %}active{% endif %}" href="{% url 'reports' %}">Reportes</a>

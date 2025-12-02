@@ -1,5 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import User
+from inventario.models import Insumo
 
 class Medicamento(models.Model):
     codigo = models.CharField(max_length=50, unique=True, blank=True)
@@ -34,3 +35,43 @@ class MovimientoFarmacia(models.Model):
 
     def __str__(self):
         return f"{self.tipo} {self.cantidad} - {self.medicamento}"
+
+# -------------------------
+# SOLICITUDES DE REPOSICIÓN
+# -------------------------
+class SolicitudReposicion(models.Model):
+    ESTADO = [
+        ("PENDIENTE", "Pendiente"),
+        ("APROBADA", "Aprobada"),
+        ("RECHAZADA", "Rechazada"),
+    ]
+
+    area = models.CharField(max_length=200)
+    usuario = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
+    fecha = models.DateTimeField(auto_now_add=True)
+    estado = models.CharField(max_length=20, choices=ESTADO, default="PENDIENTE")
+    observacion = models.TextField(blank=True, null=True)  # opcional
+
+    def __str__(self):
+        return f"Solicitud {self.id} - {self.area}"
+
+    @property
+    def total_items(self):
+        return self.items.count()
+
+    @property
+    def esta_pendiente(self):
+        return self.estado == "PENDIENTE"
+
+
+class ItemSolicitud(models.Model):
+    solicitud = models.ForeignKey(
+        SolicitudReposicion,
+        on_delete=models.CASCADE,
+        related_name="items"
+    )
+    insumo = models.ForeignKey(Insumo, on_delete=models.CASCADE)
+    cantidad = models.PositiveIntegerField()
+
+    def __str__(self):
+        return f"{self.insumo.nombre} x {self.cantidad}"

@@ -12,4 +12,6 @@ urlpatterns = [
     path('<int:pk>/', views.detalle_medicamento, name='detalle'),
     path('movimiento/nuevo/', views.movimiento_crear, name='movimiento_nuevo'),
     path("importar/", views.import_inventory_farmacia, name="import_inventory"),
+    path("solicitudes/crear/", views.solicitud_crear, name="solicitud_crear"),
+    path("solicitudes/mias/", views.solicitudes_mias, name="solicitudes_mias"),
 ]

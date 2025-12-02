@@ -61,7 +61,7 @@
           {% if user.perfil.rol == "ADMIN" %}
           <a class="btn btn-outline-primary" href="{% url 'manage_users' %}">Gestionar usuarios</a>
           {% endif %}
-          <a class="btn btn-outline-primary" href="{% url 'inventory_list' %}">Ver inventario</a>
+          <a class="btn btn-outline-primary" href="{% url 'inventario:inventory_list' %}">Ver inventario</a>
           <a class="btn btn-outline-primary" href="{% url 'reports' %}">Generar reportes</a>
         </div>
       </div>
@@ -74,7 +74,7 @@
 <div class="container-fluid mt-3">
   <h4>Panel Jefe de Bodega</h4>
   <div class="row mt-3">
-    <div class="col-md-6">
+    <div class="col-md-4">
       <div class="card p-3">
         <h6>Facturas por revisar</h6>
         <ul class="list-group list-group-flush">
@@ -83,7 +83,22 @@
       </div>
     </div>
 
-    <div class="col-md-6">
+    <div class="col-md-4">
+      <div class="card p-3">
+        <h6>Stock insumos bajos</h6>
+        <p class="mb-0">
+          {% if insumos_criticos_lista %}
+              {% for m in insumos_criticos_lista %}
+                  {{ m.nombre }}{% if not forloop.last %}, {% endif %}
+              {% endfor %}
+          {% else %}
+              <span class="text-success">No hay insumos críticos</span>
+          {% endif %}
+        </p>
+      </div>
+    </div>
+
+    <div class="col-md-4">
       <div class="card p-3">
         <h6>Discrepancias abiertas</h6>
         <p class="mb-0">2 casos por resolución</p>
@@ -104,7 +119,15 @@
     <div class="col-md-4">
       <div class="card p-3">
         <h6>Stock fármacos bajos</h6>
-        <p class="mb-0">Amoxicilina, Insulina</p>
+        <p class="mb-0">
+          {% if farmacos_criticos_lista %}
+              {% for m in farmacos_criticos_lista %}
+                  {{ m.nombre }}{% if not forloop.last %}, {% endif %}
+              {% endfor %}
+          {% else %}
+              <span class="text-success">No hay fármacos críticos</span>
+          {% endif %}
+        </p>
       </div>
     </div>
 

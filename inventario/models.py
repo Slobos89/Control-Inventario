@@ -75,32 +75,7 @@ class Movimiento(models.Model):
         return f"{self.tipo} - {self.insumo} ({self.cantidad})"
 
 
-# -------------------------
-# SOLICITUDES DE REPOSICIÓN
-# -------------------------
-class SolicitudReposicion(models.Model):
-    ESTADO = [
-        ("PENDIENTE", "Pendiente"),
-        ("APROBADA", "Aprobada"),
-        ("RECHAZADA", "Rechazada"),
-    ]
 
-    area = models.CharField(max_length=200)
-    usuario = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
-    fecha = models.DateTimeField(auto_now_add=True)
-    estado = models.CharField(max_length=20, choices=ESTADO, default="PENDIENTE")
-
-    def __str__(self):
-        return f"Solicitud {self.id} - {self.area}"
-
-
-class ItemSolicitud(models.Model):
-    solicitud = models.ForeignKey(SolicitudReposicion, on_delete=models.CASCADE, related_name="items")
-    insumo = models.ForeignKey(Insumo, on_delete=models.CASCADE)
-    cantidad = models.IntegerField()
-
-    def __str__(self):
-        return f"{self.insumo} ({self.cantidad})"
 
 
 def review_received(request, factura_id):

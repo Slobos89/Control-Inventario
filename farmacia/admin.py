@@ -1,8 +1,6 @@
-from django.contrib import admin
-
 
 from django.contrib import admin
-from .models import Medicamento, MovimientoFarmacia
+from .models import Medicamento, MovimientoFarmacia, SolicitudReposicion, ItemSolicitud
 
 @admin.register(Medicamento)
 class MedicamentoAdmin(admin.ModelAdmin):
@@ -13,3 +11,13 @@ class MedicamentoAdmin(admin.ModelAdmin):
 class MovimientoAdmin(admin.ModelAdmin):
     list_display = ('medicamento','tipo','cantidad','usuario','fecha')
     list_filter = ('tipo','fecha')
+
+class ItemSolicitudInline(admin.TabularInline):
+    model = ItemSolicitud
+    extra = 0
+
+@admin.register(SolicitudReposicion)
+class SolicitudAdmin(admin.ModelAdmin):
+    list_display = ("id", "area", "usuario", "estado", "fecha")
+    list_filter = ("estado", "area")
+    inlines = [ItemSolicitudInline]

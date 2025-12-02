@@ -1,0 +1,53 @@
+{% extends "core/base.html" %}
+
+{% block titlepage %}Mis Solicitudes{% endblock %}
+
+{% block principal %}
+<div class="container mt-4">
+    
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h3>Mis Solicitudes de Reposición</h3>
+        <a href="{% url 'farmacia:solicitud_crear' %}" class="btn btn-primary">
+            + Nueva Solicitud
+        </a>
+    </div>
+
+    {% if solicitudes %}
+    <table class="table table-hover align-middle">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Fecha</th>
+                <th>Área</th>
+                <th>Estado</th>
+                <th>Items</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for s in solicitudes %}
+            <tr>
+                <td>REQ-{{ s.id|add:"1000" }}</td>
+                <td>{{ s.fecha|date:"d/m/Y H:i" }}</td>
+                <td>{{ s.area }}</td>
+                <td>
+                    {% if s.estado == "PENDIENTE" %}
+                        <span class="badge bg-warning text-dark">{{ s.estado }}</span>
+                    {% elif s.estado == "APROBADA" %}
+                        <span class="badge bg-success">{{ s.estado }}</span>
+                    {% else %}
+                        <span class="badge bg-danger">{{ s.estado }}</span>
+                    {% endif %}
+                </td>
+                <td>{{ s.total_items }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    {% else %}
+        <div class="alert alert-info">
+            No has realizado solicitudes aún.
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

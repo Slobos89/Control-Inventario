@@ -2,8 +2,8 @@ from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.utils.encoding import smart_str
-from .models import Medicamento, MovimientoFarmacia
-from .forms import MedicamentoForm, MovimientoFarmaciaForm, UploadFileForm
+from .models import Medicamento, MovimientoFarmacia, SolicitudReposicion
+from .forms import *
 from datetime import datetime
 import csv
 
@@ -197,3 +197,77 @@ def import_inventory_farmacia(request):
     )
 
     return redirect("farmacia:medicamentos_lista")
+
+@login_required
+def dispensar_medicamento(request):
+    if request.method == "POST":
+        form = DispensacionForm(request.POST)
+
+        if form.is_valid():
+            medicamento = form.cleaned_data["medicamento"]
+            cantidad = form.cleaned_data["cantidad"]
+            observacion = form.cleaned_data["observacion"]
+
+            # Validar stock
+            if cantidad > medicamento.stock:
+                messages.error(request, f"No hay suficiente stock. Disponible: {medicamento.stock}")
+                return redirect("dispensar_medicamento")
+
+            # Restar stock
+            medicamento.stock -= cantidad
+            medicamento.save()
+
+            # Registrar movimiento
+            MovimientoFarmacia.objects.create(
+                medicamento=medicamento,
+                tipo="SALIDA",
+                cantidad=cantidad,
+                usuario=request.user,
+                observacion=observacion
+            )
+
+            messages.success(request, "Medicamento dispensado correctamente.")
+            return redirect("dispensar_medicamento")
+    else:
+        form = DispensacionForm()
+
+    return render(request, "farmacia/dispense.html", {"form": form})
+
+# ----------------------
+# SOLICITUDES DE REPOSICIÓN
+# ----------------------
+@login_required
+def solicitud_crear(request):
+    if request.method == "POST":
+        form = SolicitudReposicionForm(request.POST)
+        formset = ItemSolicitudFormSet(request.POST)
+
+        if form.is_valid() and formset.is_valid():
+            solicitud = form.save(commit=False)
+            solicitud.usuario = request.user
+            solicitud.save()
+
+            for f in formset:
+                if f.cleaned_data:
+                    ItemSolicitud.objects.create(
+                        solicitud=solicitud,
+                        insumo=f.cleaned_data["insumo"],
+                        cantidad=f.cleaned_data["cantidad"]
+                    )
+
+            messages.success(request, "Solicitud creada correctamente.")
+            return redirect("farmacia:solicitudes_mias")
+
+    else:
+        form = SolicitudReposicionForm()
+        formset = ItemSolicitudFormSet()
+
+    return render(request, "farmacia/solicitud_crear.html", {
+        "form": form,
+        "formset": formset
+    })
+
+@login_required
+def solicitudes_mias(request):
+    solicitudes = SolicitudReposicion.objects.filter(usuario=request.user).order_by("-fecha")
+    return render(request, "farmacia/solicitudes_mias.html", {"solicitudes": solicitudes})

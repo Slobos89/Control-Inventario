@@ -1,0 +1,100 @@
+{% extends "core/base.html" %}
+{% load static %}
+
+{% block titlepage %}Crear Solicitud{% endblock %}
+
+{% block principal %}
+<div class="container mt-4">
+
+    <h3 class="mb-4">Crear Solicitud de Reposición</h3>
+
+    <form method="POST">
+        {% csrf_token %}
+
+        <!-- Datos generales -->
+        <div class="card mb-3">
+            <div class="card-header">Datos de la solicitud</div>
+            <div class="card-body">
+                {{ form.as_p }}
+            </div>
+        </div>
+
+        <!-- Items -->
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span>Insumos solicitados</span>
+                <button type="button" id="add-item" class="btn btn-sm btn-primary">
+                    + Añadir insumo
+                </button>
+            </div>
+
+            <div class="card-body">
+                <table class="table table-bordered">
+                    <thead>
+                        <tr>
+                            <th>Insumo</th>
+                            <th>Cantidad</th>
+                            <th>Eliminar</th>
+                        </tr>
+                    </thead>
+                    <tbody id="formset-body">
+                        {{ formset.management_form }}
+
+                        {% for form in formset %}
+                        <tr class="formset-row">
+                            <td>{{ form.insumo }}</td>
+                            <td>{{ form.cantidad }}</td>
+                            <td>
+                                {% if form.instance.pk %}
+                                    <input type="checkbox" name="{{ form.prefix }}-DELETE">
+                                {% else %}
+                                    <button type="button" class="btn btn-danger btn-sm remove-row">X</button>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="mt-3 text-end">
+            <button type="submit" class="btn btn-success">Enviar solicitud</button>
+            <a href="{% url 'farmacia:solicitudes_mias' %}" class="btn btn-secondary">Cancelar</a>
+        </div>
+    </form>
+</div>
+
+<!-- Script para agregar filas dinámicamente -->
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const addBtn = document.getElementById("add-item");
+    const tbody = document.getElementById("formset-body");
+    const totalForms = document.getElementById("id_form-TOTAL_FORMS");
+
+    addBtn.addEventListener("click", function () {
+        const formIndex = totalForms.value;
+        const emptyRow = `
+            <tr class="formset-row">
+                <td><select name="form-${formIndex}-insumo" class="form-select">
+                    {% for insumo in formset.forms.0.fields.insumo.queryset %}
+                        <option value="{{ insumo.pk }}">{{ insumo.nombre }}</option>
+                    {% endfor %}
+                </select></td>
+                <td><input type="number" name="form-${formIndex}-cantidad" min="1" class="form-control"></td>
+                <td><button type="button" class="btn btn-danger btn-sm remove-row">X</button></td>
+            </tr>
+        `;
+        tbody.insertAdjacentHTML("beforeend", emptyRow);
+        totalForms.value = parseInt(totalForms.value) + 1;
+    });
+
+    tbody.addEventListener("click", function (e) {
+        if (e.target.classList.contains("remove-row")) {
+            e.target.closest("tr").remove();
+        }
+    });
+});
+</script>
+
+{% endblock %}

@@ -1,8 +1,13 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from .models import Insumo, FacturaIngreso, ItemFactura, Movimiento, SolicitudReposicion
-from .forms import FacturaIngresoForm, ItemFacturaForm, SolicitudForm, UploadFileForm
+from farmacia.models import SolicitudReposicion, ItemSolicitud
+from .models import *
+from .forms import (
+    FacturaIngresoForm,
+    UploadFileForm,
+)
+from django.db import transaction
 import csv
 import io
 
@@ -83,13 +88,14 @@ def register_entry(request):
     })
 
 
-# ----------------------
-# SOLICITUDES DE REPOSICIÓN
-# ----------------------
+
+
 @login_required
-def requests_view(request):
-    solicitudes = SolicitudReposicion.objects.all().order_by("-fecha")
-    return render(request, "inventario/requests.html", {"solicitudes": solicitudes})
+def solicitudes_listar(request):
+    solicitudes = SolicitudReposicion.objects.order_by("-fecha")
+    return render(request, "inventario/solicitudes_listar.html", {
+        "solicitudes": solicitudes
+    })
 
 
 def import_inventory(request):
@@ -138,3 +144,97 @@ def import_inventory(request):
         return redirect("inventory_list")
 
     return render(request, "inventario/import_inventory.html")
+
+@login_required
+def solicitud_detalle(request, pk):
+    solicitud = get_object_or_404(SolicitudReposicion, pk=pk)
+    items = solicitud.items.all()
+
+    if request.method == "POST":
+        accion = request.POST.get("accion")
+
+        if accion == "aprobar":
+            for item in solicitud.items.all():
+                insumo = item.insumo
+
+                if insumo.stock < item.cantidad:
+                    messages.error(request, f"Stock insuficiente de {insumo.nombre}.")
+                    return redirect("inventario:solicitud_detalle", pk=pk)
+
+                insumo.stock -= item.cantidad
+                insumo.save()
+
+                Movimiento.objects.create(
+                    insumo=insumo,
+                    tipo="SALIDA",
+                    cantidad=item.cantidad,
+                    usuario=request.user,
+                    observacion=f"Solicitud #{solicitud.id}"
+                )
+
+            solicitud.estado = "APROBADA"
+            solicitud.save()
+            messages.success(request, "Solicitud aprobada correctamente.")
+            return redirect("inventario:solicitudes_listar")
+
+        elif accion == "rechazar":
+            solicitud.estado = "RECHAZADA"
+            solicitud.observacion = request.POST.get("observacion", "")
+            solicitud.save()
+
+            messages.warning(request, "Solicitud rechazada.")
+            return redirect("inventario:solicitudes_listar")
+
+    return render(request, "inventario/solicitud_detalle.html", {
+        "solicitud": solicitud,
+        "items": items
+    })
+
+@login_required
+@transaction.atomic
+def solicitud_aprobar(request, pk):
+    solicitud = get_object_or_404(SolicitudReposicion, pk=pk)
+
+    if solicitud.estado != "PENDIENTE":
+        messages.warning(request, "Esta solicitud ya fue procesada.")
+        return redirect("inventario:solicitud_detalle", pk=pk)
+
+    # Verificar stock
+    for item in solicitud.items.all():
+        if item.insumo.stock < item.cantidad:
+            messages.error(request, f"No hay stock suficiente para {item.insumo.nombre}.")
+            return redirect("inventario:solicitud_detalle", pk=pk)
+
+    # Descontar stock y registrar movimiento
+    for item in solicitud.items.all():
+        insumo = item.insumo
+        insumo.stock -= item.cantidad
+        insumo.save()
+
+        # Registrar movimiento en inventario
+        Movimiento.objects.create(
+            insumo=insumo,
+            tipo="SALIDA",
+            cantidad=item.cantidad,
+            observacion=f"Solicitud aprobada #{solicitud.id} ({solicitud.area})"
+        )
+
+    solicitud.estado = "APROBADA"
+    solicitud.save()
+
+    messages.success(request, "Solicitud aprobada correctamente.")
+    return redirect("inventario:solicitud_detalle", pk=pk)
+
+@login_required
+def solicitud_rechazar(request, pk):
+    solicitud = get_object_or_404(SolicitudReposicion, pk=pk)
+
+    if solicitud.estado != "PENDIENTE":
+        messages.warning(request, "Esta solicitud ya fue procesada.")
+        return redirect("inventario:solicitud_detalle", pk=pk)
+
+    solicitud.estado = "RECHAZADA"
+    solicitud.save()
+
+    messages.success(request, "Solicitud rechazada.")
+    return redirect("inventario:solicitud_detalle", pk=pk)
