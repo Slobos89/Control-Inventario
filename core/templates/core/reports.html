@@ -34,7 +34,22 @@
     <table class="table table-sm">
       <thead><tr><th>Fecha</th><th>Tipo</th><th>Descripción</th><th>Acciones</th></tr></thead>
       <tbody>
-        <tr><td>2025-11-01</td><td>Entrada</td><td>Guantes - 500</td><td><button class="btn btn-sm btn-outline-secondary">Exportar</button></td></tr>
+        {% if movimientos %}
+          {% for mov in movimientos %}
+            <tr>
+              <td>{{ mov.fecha|date:"Y-m-d H:i" }}</td>
+              <td>{{ mov.tipo }}</td>
+              <td>{{ mov.insumo.nombre }} - {{ mov.cantidad }}</td>
+              <td><button class="btn btn-sm btn-outline-secondary">Exportar</button></td>
+            </tr>
+          {% endfor %}
+        {% else %}
+          <tr>
+            <td colspan="4" class="text-center text-muted">
+              No hay movimientos registrados.
+            </td>
+          </tr>
+        {% endif %}
       </tbody>
     </table>
   </div>

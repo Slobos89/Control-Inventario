@@ -2,6 +2,7 @@ from django.shortcuts import render, redirect
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.models import User
 from django.db.models import F, Sum
+from django.utils import timezone
 from django.utils.timezone import now
 from datetime import date
 from django.contrib import messages
@@ -10,7 +11,7 @@ from django.db import models
 
 from inventario.models import Insumo, Movimiento
 from inventario.models import Movimiento as MovimientoBodega
-from farmacia.models import Medicamento, MovimientoFarmacia
+from farmacia.models import Medicamento, MovimientoFarmacia, SolicitudReposicion
 
 def index(request):
     return render(request, "core/index.html")
@@ -43,6 +44,12 @@ def dashboard(request):
     # Fármacos críticos en lista
     farmacos_criticos_lista = Medicamento.objects.filter(stock__lte=models.F('stock_critico'))
 
+    # Solicitudes pendientes para Jefe de Bodega
+    solicitudes_pendientes_bodega = SolicitudReposicion.objects.filter(estado="PENDIENTE").count()
+
+    # Solicitudes pendientes creadas por Farmacia (para mostrarles a ellos)
+    solicitudes_pendientes_farmacia = SolicitudReposicion.objects.filter(estado="PENDIENTE",usuario=request.user).count()
+
     # Últimos movimientos (unificados)
     ult_mov_bodega = Movimiento.objects.order_by("-fecha")[:5]
     ult_mov_farmacia = MovimientoFarmacia.objects.order_by("-fecha")[:5]
@@ -60,6 +67,8 @@ def dashboard(request):
         "insumos_criticos_lista": insumos_criticos_lista,
         "farmacos_criticos": farmacos_criticos,
         "farmacos_criticos_lista": farmacos_criticos_lista,
+        "solicitudes_pendientes_bodega": solicitudes_pendientes_bodega,
+        "solicitudes_pendientes_farmacia": solicitudes_pendientes_farmacia,
         "ult_mov_bodega": ult_mov_bodega,
         "ult_mov_farmacia": ult_mov_farmacia,
         "dispensaciones_hoy": dispensaciones_hoy,
@@ -68,7 +77,29 @@ def dashboard(request):
     return render(request, "core/dashboard.html", contexto)
 
 def reports(request):
-    return render(request, "core/reports.html")
+    # --- Filtros ---
+    from_date = request.GET.get("from")
+    to_date = request.GET.get("to")
+    report_type = request.GET.get("type", "movimiento")
+
+    movimientos = Movimiento.objects.all().order_by("-fecha")
+
+    # Filtrar por fecha desde
+    if from_date:
+        movimientos = movimientos.filter(fecha__date__gte=from_date)
+
+    # Filtrar por fecha hasta
+    if to_date:
+        movimientos = movimientos.filter(fecha__date__lte=to_date)
+
+    context = {
+        "movimientos": movimientos,
+        "from": from_date,
+        "to": to_date,
+        "type": report_type,
+    }
+
+    return render(request, "core/reports.html", context)
 
 def login_view(request):
     if request.method == "POST":

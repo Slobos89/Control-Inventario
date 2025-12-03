@@ -1,0 +1,61 @@
+{% extends "core/base.html" %}
+{% block titlepage %}Detalle de Factura{% endblock %}
+
+{% block principal %}
+<div class="container mt-4">
+
+  <a href="{% url 'inventario:facturas_list' %}" class="btn btn-secondary mb-3">
+    ⬅ Volver
+  </a>
+
+  <div class="card p-4 shadow-sm">
+
+    <h4>Factura Folio {{ factura.folio }}</h4>
+    <p><strong>Proveedor:</strong> {{ factura.proveedor_nombre }}</p>
+    <p><strong>RUT:</strong> {{ factura.proveedor_rut }}</p>
+    <p><strong>Fecha de emisión:</strong> {{ factura.fecha_emision|date:"d-m-Y" }}</p>
+    <p><strong>Registrada por:</strong> {{ factura.usuario.username }}</p>
+
+    {% if factura.archivo_pdf %}
+      <p>
+        <a href="{{ factura.archivo_pdf.url }}" class="btn btn-outline-dark" target="_blank">
+          Ver PDF
+        </a>
+      </p>
+    {% endif %}
+  </div>
+
+  <div class="card p-4 shadow-sm mt-4">
+    <h5>Items de la factura</h5>
+
+    <table class="table table-bordered mt-3">
+      <thead>
+        <tr>
+          <th>Insumo</th>
+          <th>Cantidad</th>
+          <th>Lote</th>
+          <th>Vencimiento</th>
+        </tr>
+      </thead>
+
+      <tbody>
+        {% for item in items %}
+        <tr>
+          <td>{{ item.insumo.nombre }}</td>
+          <td>{{ item.cantidad }}</td>
+          <td>{{ item.lote|default:"-" }}</td>
+          <td>
+            {% if item.vencimiento %}
+              {{ item.vencimiento|date:"d-m-Y" }}
+            {% else %}
+              -
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+</div>
+{% endblock %}

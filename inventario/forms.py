@@ -9,12 +9,19 @@ from .models import (
 class FacturaIngresoForm(forms.ModelForm):
     class Meta:
         model = FacturaIngreso
-        fields = ["numero", "fecha", "proveedor"]
+        fields = [
+            "folio",
+            "fecha_emision",
+            "proveedor_rut",
+            "proveedor_nombre",
+            "proveedor_giro",
+            "archivo_pdf",
+        ]
 
-
-
-
-
+class ItemFacturaForm(forms.ModelForm):
+    class Meta:
+        model = ItemFactura
+        fields = ["insumo","cantidad","lote","vencimiento"]
 
 class UploadFileForm(forms.Form):
     archivo = forms.FileField(label="Archivo CSV o Excel")

@@ -1,37 +1,213 @@
 {% extends "core/base.html" %}
-{% block titlepage %}Registrar Ingreso{% endblock %}
+{% block titlepage %}Registrar Ingreso por Factura{% endblock %}
 
 {% block principal %}
-<div class="container mt-4">
-  <h4>Registrar Ingreso por Factura</h4>
 
-  <form class="card p-3 mt-3" method="post" action="{% url 'inventario:register_entry' %}">
+<div class="container mt-4">
+
+  <!-- ========================= -->
+  <!-- MENSAJES (success / error) -->
+  <!-- ========================= -->
+  {% if messages %}
+    {% for message in messages %}
+      <div class="alert alert-{{ message.tags }} mb-3">
+        {{ message }}
+      </div>
+    {% endfor %}
+  {% endif %}
+
+  <h3>Registrar Ingreso por Factura</h3>
+
+  <form class="card p-4 shadow-sm mt-3" method="post" action="{% url 'inventario:register_entry' %}" enctype="multipart/form-data">
     {% csrf_token %}
-    <div class="row mb-3">
-      <div class="col-md-3"><label class="form-label">Número factura</label><input class="form-control" name="numero"></div>
-      <div class="col-md-3"><label class="form-label">Fecha</label><input class="form-control" type="date" name="fecha"></div>
-      <div class="col-md-6"><label class="form-label">Proveedor</label><input class="form-control" name="proveedor"></div>
+
+    <!-- ========================= -->
+    <!-- ERRORES NO ASOCIADOS A CAMPOS -->
+    <!-- ========================= -->
+    {% if form.non_field_errors %}
+      <div class="alert alert-danger">
+        {% for err in form.non_field_errors %}
+          <div>{{ err }}</div>
+        {% endfor %}
+      </div>
+    {% endif %}
+
+    <!-- ========================= -->
+    <!-- DATOS DE LA FACTURA -->
+    <!-- ========================= -->
+
+    <h5 class="mb-3">Datos de la Factura</h5>
+
+    <div class="row g-3">
+
+      <!-- FOLIO -->
+      <div class="col-md-3">
+        <label class="form-label">Folio (Número)</label>
+        <input class="form-control" name="folio" value="{{ form.folio.value|default:'' }}" required>
+        {% if form.folio.errors %}
+          <div class="text-danger">
+            {% for e in form.folio.errors %}
+              <small>{{ e }}</small><br>
+            {% endfor %}
+          </div>
+        {% endif %}
+      </div>
+
+      <!-- FECHA EMISIÓN -->
+      <div class="col-md-3">
+        <label class="form-label">Fecha de Emisión</label>
+        <input type="date" class="form-control" name="fecha_emision" value="{{ form.fecha_emision.value|default:'' }}" required>
+        {% if form.fecha_emision.errors %}
+          <div class="text-danger">
+            {% for e in form.fecha_emision.errors %}
+              <small>{{ e }}</small><br>
+            {% endfor %}
+          </div>
+        {% endif %}
+      </div>
+
+      <!-- RUT -->
+      <div class="col-md-3">
+        <label class="form-label">RUT Proveedor</label>
+        <input class="form-control" name="proveedor_rut" value="{{ form.proveedor_rut.value|default:'' }}" required>
+        {% if form.proveedor_rut.errors %}
+          <div class="text-danger">
+            {% for e in form.proveedor_rut.errors %}
+              <small>{{ e }}</small><br>
+            {% endfor %}
+          </div>
+        {% endif %}
+      </div>
+
+      <!-- NOMBRE PROVEEDOR -->
+      <div class="col-md-3">
+        <label class="form-label">Nombre Proveedor</label>
+        <input class="form-control" name="proveedor_nombre" value="{{ form.proveedor_nombre.value|default:'' }}" required>
+        {% if form.proveedor_nombre.errors %}
+          <div class="text-danger">
+            {% for e in form.proveedor_nombre.errors %}
+              <small>{{ e }}</small><br>
+            {% endfor %}
+          </div>
+        {% endif %}
+      </div>
+
+      <!-- GIRO -->
+      <div class="col-md-12">
+        <label class="form-label">Giro del Proveedor</label>
+        <input class="form-control" name="proveedor_giro" value="{{ form.proveedor_giro.value|default:'' }}">
+        {% if form.proveedor_giro.errors %}
+          <div class="text-danger">
+            {% for e in form.proveedor_giro.errors %}
+              <small>{{ e }}</small><br>
+            {% endfor %}
+          </div>
+        {% endif %}
+      </div>
+
     </div>
 
-    <hr>
-    <h6>Detalle de artículos</h6>
-    <table class="table">
-      <thead><tr><th>Insumo</th><th>Cantidad</th><th>Lote</th><th>Vencimiento</th><th></th></tr></thead>
-      <tbody id="items">
+    <hr class="my-4">
+
+    <!-- ========================= -->
+    <!-- DETALLE DE ARTÍCULOS -->
+    <!-- ========================= -->
+
+    <h5>Detalle de Artículos</h5>
+
+    <table class="table table-bordered table-striped mt-3">
+      <thead class="table-light">
         <tr>
-          <td><input class="form-control" placeholder="nombre insumo" name="insumo_1"></td>
-          <td><input class="form-control" type="number" value="0" name="cantidad_1"></td>
-          <td><input class="form-control" name="lote_1"></td>
-          <td><input class="form-control" type="date" name="vencimiento_1"></td>
-          <td><button class="btn btn-sm btn-danger" type="button">Quitar</button></td>
+          <th>Insumo</th>
+          <th style="width: 110px;">Cantidad</th>
+          <th style="width: 140px;">Lote</th>
+          <th style="width: 160px;">Vencimiento</th>
+          <th style="width: 40px;"></th>
+        </tr>
+      </thead>
+
+      <tbody id="items">
+        <!-- FILA 1 -->
+        <tr>
+          <td>
+            <select class="form-select" name="insumo_1" required>
+              <option value="">Seleccione insumo...</option>
+              {% for insumo in insumos %}
+                <option 
+                  value="{{ insumo.id }}"
+                  {% if request.POST.insumo_1 == insumo.id|stringformat:"s" %}selected{% endif %}
+                >
+                  {{ insumo.nombre }} ({{ insumo.codigo }})
+                </option>
+              {% endfor %}
+            </select>
+          </td>
+
+          <td><input type="number" class="form-control" name="cantidad_1" value="{{ request.POST.cantidad_1|default:1 }}"></td>
+          <td><input class="form-control" name="lote_1" value="{{ request.POST.lote_1 }}"></td>
+          <td><input type="date" class="form-control" name="vencimiento_1" value="{{ request.POST.vencimiento_1 }}"></td>
+
+          <td>
+            <button type="button" class="btn btn-danger btn-sm" onclick="removeRow(this)">✕</button>
+          </td>
         </tr>
       </tbody>
     </table>
 
+    <button type="button" class="btn btn-outline-primary btn-sm" onclick="addRow()">➕ Agregar artículo</button>
+
+    <hr class="my-4">
+
     <div class="d-flex justify-content-end">
-      <button class="btn btn-secondary me-2" type="reset">Limpiar</button>
-      <button class="btn btn-primary" type="submit">Registrar factura</button>
+      <a href="{% url 'inventario:inventory_list' %}" class="btn btn-secondary me-2">Cancelar</a>
+      <button class="btn btn-primary" type="submit">Registrar Factura</button>
     </div>
+
   </form>
 </div>
+
+<script>
+let itemIndex = 2;
+
+function addRow() {
+  const selectOptions = `
+    <option value="">Seleccione insumo...</option>
+    {% for insumo in insumos %}
+      <option value="{{ insumo.id }}">{{ insumo.nombre }} ({{ insumo.codigo }})</option>
+    {% endfor %}
+  `;
+
+  const row = document.createElement("tr");
+
+  row.innerHTML = `
+    <td>
+      <select class="form-select" name="insumo_${itemIndex}" required>
+        ${selectOptions}
+      </select>
+    </td>
+
+    <td>
+      <input type="number" class="form-control" name="cantidad_${itemIndex}" value="1" min="1" required>
+    </td>
+
+    <td><input class="form-control" name="lote_${itemIndex}"></td>
+    <td><input type="date" class="form-control" name="vencimiento_${itemIndex}"></td>
+
+    <td><button type="button" class="btn btn-danger btn-sm" onclick="removeRow(this)">✕</button></td>
+  `;
+
+  document.getElementById("items").appendChild(row);
+  itemIndex++;
+}
+
+function removeRow(button) {
+  const row = button.closest("tr");
+  const totalRows = document.querySelectorAll("#items tr").length;
+
+  if (totalRows > 1) {
+    row.remove();
+  }
+}
+</script>
+
 {% endblock %}

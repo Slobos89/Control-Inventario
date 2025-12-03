@@ -1,6 +1,7 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from django.forms import inlineformset_factory 
 from farmacia.models import SolicitudReposicion, ItemSolicitud
 from .models import *
 from .forms import (
@@ -25,6 +26,8 @@ def inventory_list(request):
 # ----------------------
 @login_required
 def register_entry(request):
+    insumos = Insumo.objects.all().order_by("nombre")
+
     if request.method == "POST":
         factura_form = FacturaIngresoForm(request.POST)
 
@@ -33,7 +36,7 @@ def register_entry(request):
             factura.usuario = request.user
             factura.save()
 
-            # Capturar items dinámicos del form
+            # Capturar items dinámicamente
             index = 1
             while True:
                 insumo_key = f"insumo_{index}"
@@ -42,19 +45,19 @@ def register_entry(request):
                 venc_key = f"vencimiento_{index}"
 
                 if insumo_key not in request.POST:
-                    break  # no hay más items
+                    break  # No hay más filas
 
-                nombre_insumo = request.POST.get(insumo_key)
-                cantidad = int(request.POST.get(cantidad_key))
+                insumo_id = request.POST.get(insumo_key)
 
-                # buscar insumo o crearlo si no existe
-                insumo, _ = Insumo.objects.get_or_create(
-                    nombre=nombre_insumo,
-                    defaults={"codigo": f"AUTO-{index}", "unidad": "unidad", "stock": 0, "stock_minimo": 0}
-                )
+                if not insumo_id:
+                    index += 1
+                    continue
 
-                # registrar item de factura
-                item = ItemFactura.objects.create(
+                cantidad = int(request.POST.get(cantidad_key, 0))
+
+                insumo = get_object_or_404(Insumo, pk=insumo_id)
+
+                ItemFactura.objects.create(
                     factura=factura,
                     insumo=insumo,
                     cantidad=cantidad,
@@ -62,7 +65,6 @@ def register_entry(request):
                     vencimiento=request.POST.get(venc_key) or None
                 )
 
-                # registrar movimiento
                 Movimiento.objects.create(
                     insumo=insumo,
                     tipo="INGRESO",
@@ -71,23 +73,43 @@ def register_entry(request):
                     factura=factura
                 )
 
-                # actualizar stock
                 insumo.stock += cantidad
                 insumo.save()
 
                 index += 1
 
             messages.success(request, "Factura registrada correctamente.")
-            return redirect("inventory_list")
+            return redirect("inventario:facturas")
+
+        else:
+            messages.error(request, "Corrige los errores del formulario.")
 
     else:
         factura_form = FacturaIngresoForm()
 
     return render(request, "inventario/register_entry.html", {
         "form": factura_form,
+        "insumos": insumos,
     })
 
 
+@login_required
+def facturas_list(request):
+    facturas = FacturaIngreso.objects.all().order_by("-fecha_emision")
+
+    return render(request, "inventario/facturas_list.html", {
+        "facturas": facturas
+    })
+
+@login_required
+def factura_detalle(request, pk):
+    factura = get_object_or_404(FacturaIngreso, pk=pk)
+    items = factura.items.all()
+
+    return render(request, "inventario/factura_detalle.html", {
+        "factura": factura,
+        "items": items
+    })
 
 
 @login_required

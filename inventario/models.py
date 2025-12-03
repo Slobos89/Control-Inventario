@@ -32,25 +32,60 @@ class Insumo(models.Model):
 # FACTURAS DE INGRESO
 # -------------------------
 class FacturaIngreso(models.Model):
-    numero = models.CharField(max_length=100)
-    fecha = models.DateField()
-    proveedor = models.CharField(max_length=200)
+
+    TIPO_DTE = [
+        (33, "Factura Electrónica (Afecta)"),
+        (34, "Factura Exenta Electrónica"),
+        (52, "Guía de Despacho"),
+        (61, "Nota de Crédito"),
+        (56, "Nota de Débito"),
+    ]
+
+    folio = models.PositiveIntegerField(unique=True)  # Número SII único
+    tipo_dte = models.PositiveSmallIntegerField(choices=TIPO_DTE, default=33)
+
+    fecha_emision = models.DateField()
+
+    # Datos del proveedor (más realistas)
+    proveedor_rut = models.CharField(max_length=15)  # Ej: 76.123.456-7
+    proveedor_nombre = models.CharField(max_length=200)
+    proveedor_giro = models.CharField(max_length=200, blank=True, null=True)
+
+    # Usuario que registra en el sistema
     usuario = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
     fecha_registro = models.DateTimeField(auto_now_add=True)
 
+    # PDF opcional del DTE
+    archivo_pdf = models.FileField(upload_to="facturas/", blank=True, null=True)
+
     def __str__(self):
-        return f"Factura {self.numero}"
+        return f"DTE {self.folio} - {self.proveedor_nombre}"
+
+    @property
+    def subtotal_items(self):
+        """Suma total de los items, útil si decides calcular neto automáticamente"""
+        return sum(item.cantidad for item in self.items.all())
 
 
 class ItemFactura(models.Model):
-    factura = models.ForeignKey(FacturaIngreso, on_delete=models.CASCADE, related_name="items")
+    factura = models.ForeignKey(
+        FacturaIngreso,
+        on_delete=models.CASCADE,
+        related_name="items"
+    )
     insumo = models.ForeignKey(Insumo, on_delete=models.CASCADE)
-    cantidad = models.IntegerField()
+
+    cantidad = models.PositiveIntegerField()
+
     lote = models.CharField(max_length=100, blank=True, null=True)
     vencimiento = models.DateField(blank=True, null=True)
 
+    @property
+    def subtotal(self):
+        return self.cantidad * self.precio_unitario
+
     def __str__(self):
-        return f"{self.insumo} x {self.cantidad}"
+        return f"{self.insumo.nombre} x {self.cantidad}"
 
 
 # -------------------------
