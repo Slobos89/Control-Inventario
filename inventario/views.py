@@ -79,7 +79,7 @@ def register_entry(request):
                 index += 1
 
             messages.success(request, "Factura registrada correctamente.")
-            return redirect("inventario:facturas")
+            return redirect("inventario:facturas_list")
 
         else:
             messages.error(request, "Corrige los errores del formulario.")

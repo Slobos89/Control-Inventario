@@ -1,0 +1,54 @@
+{% extends "core/base.html" %}
+{% block titlepage %}Detalle de Factura{% endblock %}
+
+{% block principal %}
+<div class="container mt-4">
+
+  <a href="{% url 'farmacia:facturas_list' %}" class="btn btn-secondary mb-3">
+    ⬅ Volver
+  </a>
+
+  <div class="card p-4 shadow-sm">
+    <h4>Factura Nº {{ factura.folio }}</h4>
+    <p><strong>Proveedor:</strong> {{ factura.proveedor_nombre|default:"-" }}</p>
+    <p><strong>Giro:</strong> {{ factura.proveedor_giro|default:"-" }}</p>
+
+    <p><strong>Fecha:</strong> {{ factura.fecha_emision|date:"d-m-Y" }}</p>
+
+    <p><strong>Registrada por:</strong> {{ factura.usuario.username }}</p>
+  </div>
+
+  <div class="card p-4 shadow-sm mt-4">
+    <h5>Items de la factura</h5>
+
+    <table class="table table-bordered mt-3">
+      <thead>
+        <tr>
+          <th>Medicamento</th>
+          <th>Cantidad</th>
+          <th>Lote</th>
+          <th>Vencimiento</th>
+        </tr>
+      </thead>
+
+      <tbody>
+        {% for item in items %}
+        <tr>
+          <td>{{ item.medicamento.nombre }}</td>
+          <td>{{ item.cantidad }}</td>
+          <td>{{ item.lote }}</td>
+          <td>
+            {% if item.vencimiento %}
+              {{ item.vencimiento|date:"d-m-Y" }}
+            {% else %}
+              -
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+</div>
+{% endblock %}

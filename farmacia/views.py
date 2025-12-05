@@ -2,7 +2,7 @@ from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.utils.encoding import smart_str
-from .models import Medicamento, MovimientoFarmacia, SolicitudReposicion
+from .models import *
 from .forms import *
 from datetime import datetime
 import csv
@@ -25,12 +25,43 @@ def lista_medicamentos(request):
 
 @login_required
 def detalle_medicamento(request, pk):
-    if not rol_permitido(request.user, ["ADMIN","JEFE_FARMACIA","FUNC_FARMACIA"]):
-        messages.error(request, "No tienes permiso.")
-        return redirect("index")
-    m = get_object_or_404(Medicamento, pk=pk)
-    movimientos = m.movimientos.all().order_by('-fecha')[:20]
-    return render(request, "farmacia/medicamento_detail.html", {"medicamento": m, "movimientos": movimientos})
+    medicamento = get_object_or_404(Medicamento, pk=pk)
+
+    # Últimos movimientos
+    movimientos = MovimientoFarmacia.objects.filter(
+        medicamento=medicamento
+    ).order_by("-fecha")[:10]
+
+    # ---- ALERTAS DE VENCIMIENTO ----
+    hoy = date.today()
+    en_30 = hoy + timedelta(days=30)
+    en_60 = hoy + timedelta(days=60)
+
+    # Lotes asociados al medicamento
+    lotes = ItemFactura.objects.filter(medicamento=medicamento)
+
+    # Lotes que vencen en <30 días
+    vencen_menos_30 = lotes.filter(
+        vencimiento__isnull=False,
+        vencimiento__gte=hoy,
+        vencimiento__lte=en_30,
+    ).count()
+
+    # Lotes que vencen entre 30 y 60 días
+    vencen_30_60 = lotes.filter(
+        vencimiento__isnull=False,
+        vencimiento__gt=en_30,
+        vencimiento__lte=en_60,
+    ).count()
+
+    context = {
+        "medicamento": medicamento,
+        "movimientos": movimientos,
+        "vencen_menos_30": vencen_menos_30,
+        "vencen_30_60": vencen_30_60,
+    }
+
+    return render(request, "farmacia/detalle_medicamento.html", context)
 
 @login_required
 def crear_medicamento(request):
@@ -271,3 +302,86 @@ def solicitud_crear(request):
 def solicitudes_mias(request):
     solicitudes = SolicitudReposicion.objects.filter(usuario=request.user).order_by("-fecha")
     return render(request, "farmacia/solicitudes_mias.html", {"solicitudes": solicitudes})
+
+@login_required
+def crear_factura_farmacia(request):
+
+    medicamentos = Medicamento.objects.all().order_by("nombre")
+
+    if request.method == "POST":
+        factura_form = FacturaFarmaciaForm(request.POST)
+        if factura_form.is_valid():
+            factura = factura_form.save(commit=False)
+            factura.usuario = request.user
+            factura.save()
+
+            index = 1
+            while True:
+                medicamento_key = f"medicamento_{index}"
+                cantidad_key = f"cantidad_{index}"
+                lote_key = f"lote_{index}"
+                venc_key = f"vencimiento_{index}"
+
+                if medicamento_key not in request.POST:
+                    break 
+                
+                medicamento_id = request.POST.get(medicamento_key)
+
+                if not medicamento_id:
+                    index += 1
+                    continue
+                
+                cantidad = int(request.POST.get(cantidad_key, 0))
+
+                med = get_object_or_404(Medicamento, pk=medicamento_id)
+
+                ItemFacturaFarmacia.objects.create(
+                    factura=factura,
+                    medicamento=med,
+                    cantidad=cantidad,
+                    lote=request.POST.get(lote_key),
+                    vencimiento=request.POST.get(venc_key) or None
+                )
+
+                MovimientoFarmacia.objects.create(
+                    medicamento=med,
+                    tipo="INGRESO",
+                    cantidad=cantidad,
+                    usuario=request.user,
+                    factura=factura
+                )
+
+                med.stock += cantidad
+                med.save()
+
+                index += 1
+
+            messages.success(request,"Factura registrada correctamente.")
+            return redirect("farmacia:facturas_list")
+        else:
+            messages.error(request, "Corrige los errores del formulario.")
+    else:
+        factura_form = FacturaFarmaciaForm()
+
+    return render(request, "farmacia/crear_factura.html",{
+        "form":factura_form,
+        "medicamentos":medicamentos,
+    })
+
+
+    
+def factura_farmacia_detalle(request, pk):
+    factura = get_object_or_404(FacturaFarmacia, pk=pk)
+    items = factura.items.all()
+
+    return render(request, "farmacia/factura_detalle.html", {
+        "factura": factura,
+        "items": items
+    })
+
+def facturas_farmacia_list(request):
+    facturas = FacturaFarmacia.objects.order_by("-fecha_emision")
+
+    return render(request, "farmacia/facturas_list.html", {
+        "facturas": facturas
+    })

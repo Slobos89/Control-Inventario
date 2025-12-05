@@ -1,0 +1,232 @@
+{% extends "core/base.html" %}
+{% load static %}
+
+{% block principal %}
+<div class="container mt-4">
+
+    <!-- ========================= -->
+    <!-- TÍTULO -->
+    <!-- ========================= -->
+    <h3>Ingresar Factura de Farmacia</h3>
+
+    <!-- Mensajes -->
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+        {% endfor %}
+    {% endif %}
+
+    <form class="card p-4 shadow-sm mt-3" method="POST" action="{% url 'farmacia:crear_factura' %}" enctype="multipart/form-data">
+        {% csrf_token %}
+
+        {% if form.non_field_errors %}
+            <div class="alert alert-danger">
+                {% for err in form.non_field_errors %}
+                <div>{{ err }}</div>
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        <!-- ========================= -->
+        <!-- DATOS DE LA FACTURA -->
+        <!-- ========================= -->
+
+      
+        <h5 class="mb-3">Datos de la Factura</h5>
+
+        <div class="row g-3">
+
+            <!-- FOLIO -->
+            <div class="col-md-3">
+                <label class="form-label">Folio (Número)</label>
+                <input class="form-control" name="folio" value="{{ form.folio.value|default:'' }}" required>
+                {% if form.folio.errors %}
+                <div class="text-danger">
+                    {% for e in form.folio.errors %}
+                    <small>{{ e }}</small><br>
+                    {% endfor %}
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- FECHA EMISIÓN -->
+            <div class="col-md-3">
+                <label class="form-label">Fecha de Emisión</label>
+                <input type="date" class="form-control" name="fecha_emision" value="{{ form.fecha_emision.value|default:'' }}" required>
+                {% if form.fecha_emision.errors %}
+                <div class="text-danger">
+                    {% for e in form.fecha_emision.errors %}
+                    <small>{{ e }}</small><br>
+                {% endfor %}
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- RUT PROVEEDOR -->
+            <div class="col-md-3">
+                <label class="form-label">RUT Proveedor</label>
+                <input class="form-control" name="proveedor_rut" value="{{ form.proveedor_rut.value|default:'' }}" required>
+                {% if form.proveedor_rut.errors %}
+                <div class="text-danger">
+                    {% for e in form.proveedor_rut.errors %}
+                    <small>{{ e }}</small><br>
+                    {% endfor %}
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- NOMBRE PROVEEDOR -->
+            <div class="col-md-3">
+                <label class="form-label">Nombre Proveedor</label>
+                <input class="form-control" name="proveedor_nombre" value="{{ form.proveedor_nombre.value|default:'' }}" required>
+                {% if form.proveedor_nombre.errors %}
+                <div class="text-danger">
+                    {% for e in form.proveedor_nombre.errors %}
+                    <small>{{ e }}</small><br>
+                    {% endfor %}
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- GIRO PROVEEDOR -->
+            <div class="col-md-12">
+                <label class="form-label">Giro del Proveedor</label>
+                <input class="form-control" name="proveedor_giro" value="{{ form.proveedor_giro.value|default:'' }}">
+                {% if form.proveedor_giro.errors %}
+                <div class="text-danger">
+                    {% for e in form.proveedor_giro.errors %}
+                    <small>{{ e }}</small><br>
+                    {% endfor %}
+                </div>
+                {% endif %}
+            </div>
+
+        </div>
+        
+      
+
+        <!-- ================================== -->
+        <!-- DETALLE ITEMS (dinámico estilo bodega) -->
+        <!-- ================================== -->
+        <div class="card p-4 shadow-sm mt-4">
+            <h5>Detalle de Medicamentos</h5>
+
+            
+            <table class="table table-bordered table-striped mt-3">
+                <thead class="table-light">
+                    <tr>
+                        <th>Medicamento</th>
+                        <th style="width:110px;">Cantidad</th>
+                        <th style="width:140px;">Lote</th>
+                        <th style="width:160px;">Vencimiento</th>
+                        <th style="width:40px;"></th>
+                    </tr>
+                </thead>
+
+            
+
+                <tbody id="items">
+                    <!-- FILA 1 -->
+                    <tr>
+                        <td>
+                            <select class="form-select" name="medicamento_1" required>
+                                <option value="">Seleccione medicamento...</option>
+
+                                {% for medicamento in medicamentos %}
+                                    <option 
+                                        value="{{ medicamento.id }}"
+                                        {% if request.POST.medicamento_1 == medicamento.id|stringformat:"s" %}selected{% endif %}
+                                    >
+                                        {{ medicamento.nombre }} ({{ medicamento.codigo }})
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </td>
+
+                        <td><input type="number" class="form-control" min="1" name="cantidad_1" value="{{ request.POST.cantidad_1|default:1 }}" required></td>
+                        <td><input class="form-control" name="lote_1" value="{{ request.POST.lote_1 }}"></td>
+                        <td><input type="date" class="form-control" name="vencimiento_1" value="{{ request.POST.vencimiento_1 }}"></td>
+
+                        <td>
+                            <button type="button" class="btn btn-danger btn-sm" onclick="removeRow(this)">✕</button>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <button type="button" class="btn btn-outline-primary btn-sm" onclick="addRow()">
+                ➕ Agregar medicamento
+            </button>
+        </div>
+
+
+        <!-- BOTONES -->
+        <div class="d-flex justify-content-end mt-3">
+            <a href="{% url 'farmacia:facturas_list' %}" class="btn btn-secondary me-2">Cancelar</a>
+            <button type="submit" class="btn btn-primary">Guardar Factura</button>
+        </div>
+
+    </form>
+</div>
+
+<!-- ================================== -->
+<!-- SCRIPT PARA AGREGAR / BORRAR FILAS -->
+<!-- ================================== -->
+<script>
+let itemIndex = 1;
+
+function addRow() {
+  const selectOptions = `
+    <option value="">Seleccione medicamento...</option>
+    {% for m in medicamentos %}
+      <option value="{{ m.id }}">{{ m.nombre }} ({{ m.codigo }})</option>
+    {% endfor %}
+  `;
+
+  const row = document.createElement("tr");
+
+  row.innerHTML = `
+    <td>
+      <select class="form-select" name="medicamento_${itemIndex}" required>
+        ${selectOptions}
+      </select>
+    </td>
+
+    <td>
+      <input type="number" class="form-control" min="1" value="1"
+             name="cantidad_${itemIndex}" required>
+    </td>
+
+    <td>
+      <input type="text" class="form-control"
+             name="lote_${itemIndex}">
+    </td>
+
+    <td>
+      <input type="date" class="form-control"
+             name="vencimiento_${itemIndex}">
+    </td>
+
+    <td>
+      <button type="button" class="btn btn-danger btn-sm" onclick="removeRow(this)">
+        ✕
+      </button>
+    </td>
+  `;
+
+  document.getElementById("items").appendChild(row);
+
+  itemIndex++;
+}
+
+function removeRow(button) {
+  const row = button.closest("tr");
+  const totalRows = document.querySelectorAll("#items tr").length;
+
+  if (totalRows > 1) {
+    row.remove();
+  }
+}
+</script>
+
+{% endblock %}

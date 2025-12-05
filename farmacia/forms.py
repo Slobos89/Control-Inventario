@@ -1,11 +1,8 @@
 from django import forms
-from django.forms import inlineformset_factory
-from .models import (
-    Medicamento,
-    MovimientoFarmacia,
-    SolicitudReposicion,
-    ItemSolicitud
-)
+from django.forms import inlineformset_factory, formset_factory
+from .models import *
+
+
 
 class MedicamentoForm(forms.ModelForm):
     class Meta:
@@ -32,8 +29,6 @@ class DispensacionForm(forms.Form):
         label="Observación"
     )
 
-
-
 class ItemSolicitudForm(forms.ModelForm):
     class Meta:
         model = ItemSolicitud
@@ -43,6 +38,14 @@ class ItemSolicitudForm(forms.ModelForm):
             "cantidad": forms.NumberInput(attrs={"class": "form-control", "min": 1}),
         }
 
+ItemSolicitudFormSet = inlineformset_factory(
+    SolicitudReposicion,
+    ItemSolicitud,
+    form=ItemSolicitudForm,
+    extra=1,
+    can_delete=True
+)
+
 class SolicitudReposicionForm(forms.ModelForm):
     class Meta:
         model = SolicitudReposicion
@@ -51,10 +54,28 @@ class SolicitudReposicionForm(forms.ModelForm):
             "area": forms.TextInput(attrs={"class": "form-control"}),
         }
 
-ItemSolicitudFormSet = inlineformset_factory(
-    SolicitudReposicion,
-    ItemSolicitud,
-    form=ItemSolicitudForm,
-    extra=1,
-    can_delete=True
-)
+
+
+class FacturaFarmaciaForm(forms.ModelForm):
+    class Meta:
+        model = FacturaFarmacia
+        fields = [
+            "folio",
+            "fecha_emision",
+            "proveedor_rut",
+            "proveedor_nombre",
+            "proveedor_giro",
+            "archivo_pdf",
+        ]
+
+    
+
+
+class ItemFacturaFarmaciaForm(forms.ModelForm):
+    class Meta:
+        model = ItemFacturaFarmacia
+        fields = ["medicamento", "lote", "vencimiento", "cantidad"]
+        widgets = {
+            "vencimiento": forms.DateInput(attrs={"type": "date"}),
+        }
+

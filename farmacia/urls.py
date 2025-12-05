@@ -14,4 +14,7 @@ urlpatterns = [
     path("importar/", views.import_inventory_farmacia, name="import_inventory"),
     path("solicitudes/crear/", views.solicitud_crear, name="solicitud_crear"),
     path("solicitudes/mias/", views.solicitudes_mias, name="solicitudes_mias"),
+    path("facturas/", views.facturas_farmacia_list, name="facturas_list"),
+    path("facturas/<int:pk>/", views.factura_farmacia_detalle, name="factura_detalle"),
+    path("facturas/nueva/", views.crear_factura_farmacia, name="crear_factura"),
 ]

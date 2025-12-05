@@ -32,9 +32,10 @@ class MovimientoFarmacia(models.Model):
     usuario = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
     fecha = models.DateTimeField(auto_now_add=True)
     observacion = models.TextField(blank=True, null=True)
+    factura = models.ForeignKey("FacturaFarmacia", on_delete=models.SET_NULL,null=True, blank=True, related_name="movimientos")
 
     def __str__(self):
-        return f"{self.tipo} {self.cantidad} - {self.medicamento}"
+        return f"{self.tipo} - {self.medicamento} {self.cantidad}"
 
 # -------------------------
 # SOLICITUDES DE REPOSICIÓN
@@ -75,3 +76,50 @@ class ItemSolicitud(models.Model):
 
     def __str__(self):
         return f"{self.insumo.nombre} x {self.cantidad}"
+
+class FacturaFarmacia(models.Model):
+
+    TIPO_DTE = [
+        (33, "Factura Electrónica (Afecta)"),
+        (34, "Factura Exenta Electrónica"),
+        (52, "Guía de Despacho"),
+        (61, "Nota de Crédito"),
+        (56, "Nota de Débito"),
+    ]
+
+    # Número de foliación (folio del SII)
+    folio = models.PositiveIntegerField(unique=True)
+
+    tipo_dte = models.PositiveSmallIntegerField(choices=TIPO_DTE, default=33)
+
+    fecha_emision = models.DateField()
+
+    # Datos del proveedor
+    proveedor_rut = models.CharField(max_length=15)      # Ej: 76.123.456-7
+    proveedor_nombre = models.CharField(max_length=200)
+    proveedor_giro = models.CharField(max_length=200, blank=True, null=True)
+
+    # Usuario registrador
+    usuario = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
+    fecha_registro = models.DateTimeField(auto_now_add=True)
+
+    # PDF opcional del DTE
+    archivo_pdf = models.FileField(upload_to="facturas_farmacia/", blank=True, null=True)
+
+    def __str__(self):
+        return f"DTE {self.folio} - {self.proveedor_nombre}"
+
+    @property
+    def total_items(self):
+        """Devuelve la suma de todas las cantidades ingresadas en el detalle."""
+        return sum(item.cantidad for item in self.items.all())
+
+class ItemFacturaFarmacia(models.Model):
+    factura = models.ForeignKey(FacturaFarmacia, on_delete=models.CASCADE, related_name="items")
+    medicamento = models.ForeignKey(Medicamento, on_delete=models.PROTECT)
+    lote = models.CharField(max_length=100)
+    vencimiento = models.DateField(null=True, blank=True)
+    cantidad = models.PositiveIntegerField()
+
+    def __str__(self):
+        return f"{self.medicamento.nombre} x {self.cantidad}"

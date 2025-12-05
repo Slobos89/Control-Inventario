@@ -13,51 +13,107 @@
         <p class="small">Última actualización: hoy</p>
       </div>
       {% endif %}
+      {% if user.perfil.rol == "JEFE_BODEGA" %}
       <div class="card card-compact p-3 mb-3">
         <h6>Insumos críticos</h6>
         <h2>{{ insumos_criticos }}</h2>
       </div>
+      {% endif %}
+      {% if user.perfil.rol == "JEFE_FARMACIA" %}
       <div class="card card-compact p-3 mb-3">
         <h6>Farmacos criticos</h6>
         <h2>{{ farmacos_criticos }}</h2>
       </div>
+      
+      <div class="card card-compact p-3 mb-3">
+        <h6>Dispensaciones hoy</h6>
+        <h2>{{ dispensaciones_hoy }}</h2>
+      </div>
+   
+      {% endif %}
       <div class="card card-compact p-3">
         <h6>Solicitudes pendientes</h6>
         <h2>{{ solicitudes_pendientes_farmacia }}</h2>
       </div>
     </div>
 
-    <div class="col-md-9">
-      <div class="card p-3 mb-3">
-        <h5>Resumen de actividad</h5>
-        <div class="row mt-3">
-          <div class="col-md-6">
-            <canvas id="chart1" style="max-height:200px"></canvas>
-          </div>
-          <div class="col-md-6">
-            <h6>Últimos movimientos</h6>
-            <ul class="list-group">
+    <div class="card col-md-9">
+      <div class="card-body">
+        <h5 class="card-title mb-4">Resumen de actividad</h5>
+        <div class="row">
+            <!-- 🔶 Columna izquierda: Alertas de vencimientos -->
+            <div class="col-md-6">
+                <h6>Alertas de vencimientos próximos</h6>
 
-              {% for m in ult_mov_bodega %}
-              <li class="list-group-item">
-                🏷️ Bodega – {{ m.insumo.nombre }} ({{ m.tipo }}) - {{ m.cantidad }} 
-              </li>
-              {% endfor %}
+                <div class="list-group mb-3">
+                    {% if user.perfil.rol == "JEFE_BODEGA" %}
+                    <div class="list-group-item d-flex justify-content-between align-items-center">
+                        <span>
+                            ⚠️ Lotes que vencen en &lt; 30 días
+                        </span>
+                        <span class="badge bg-warning text-dark">
+                            {{ vencimientos_30 }}
+                        </span>
+                    </div>
 
-              {% for m in ult_mov_farmacia %}
-              <li class="list-group-item">
-                💊 Farmacia – {{ m.medicamento.nombre }} ({{ m.tipo }}) - {{ m.cantidad }}
-              </li>
-              {% endfor %}
+                    <div class="list-group-item d-flex justify-content-between align-items-center">
+                        <span>
+                            ⌛ Lotes que vencen entre 30 y 60 días
+                        </span>
+                        <span class="badge bg-secondary">
+                            {{ vencimientos_30_60 }}
+                        </span>
+                    </div>
+                    {% endif %}
+                    {% if user.perfil.rol == "JEFE_FARMACIA" %}
+                    <div class="list-group-item d-flex justify-content-between align-items-center">
+                        <span>
+                            ⚠️ Lotes que vencen en &lt; 30 días
+                        </span>
+                        <span class="badge bg-warning text-dark">
+                            {{ vencimientos_farmacia_30 }}
+                        </span>
+                    </div>
 
-            </ul>
-          </div>
+                    <div class="list-group-item d-flex justify-content-between align-items-center">
+                        <span>
+                            ⌛ Lotes que vencen entre 30 y 60 días
+                        </span>
+                        <span class="badge bg-secondary">
+                            {{ vencimientos_farmacia_30_60 }}
+                        </span>
+                    </div> 
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- 🔷 Columna derecha: Últimos movimientos -->
+            <div class="col-md-6">
+                <h6>Últimos movimientos</h6>
+
+                <div class="list-group">
+                  {% if user.perfil.rol == "JEFE_BODEGA" %}
+                    {% for mov in ult_mov_bodega|slice:":5" %}
+                        <div class="list-group-item">
+                            🏷️ Bodega – {{ mov.insumo.nombre }} ({{ mov.tipo }}) – {{ mov.cantidad }}
+                        </div>
+                    {% endfor %}
+                  {% endif %}
+                  {% if user.perfil.rol == "JEFE_FARMACIA" %}
+                    {% for mov in ult_mov_farmacia|slice:":5" %}
+                        <div class="list-group-item">
+                            💊 Farmacia – {{ mov.medicamento.nombre }} ({{ mov.tipo }}) – {{ mov.cantidad }}
+                        </div>
+                    {% endfor %}
+                  {% endif %}
+                </div>
+            </div>
         </div>
       </div>
 
-      <div class="card p-3">
-        <h6>Accesos rápidos</h6>
-        <div class="d-flex gap-2 mt-2">
+      <div class="card-body border-top mt-3 pt-3">
+        <h6 class="mb-2">Accesos rápidos</h6>
+        <div class="d-flex gap-2 mt-1">
           {% if user.perfil.rol == "ADMIN" %}
           <a class="btn btn-outline-primary" href="{% url 'manage_users' %}">Gestionar usuarios</a>
           {% endif %}
@@ -74,14 +130,6 @@
 <div class="container-fluid mt-3">
   <h4>Panel Jefe de Bodega</h4>
   <div class="row mt-3">
-    <div class="col-md-4">
-      <div class="card p-3">
-        <h6>Facturas por revisar</h6>
-        <ul class="list-group list-group-flush">
-          <li class="list-group-item">FAC-2025-234 <span class="badge bg-warning float-end">Pendiente</span></li>
-        </ul>
-      </div>
-    </div>
 
     <div class="col-md-4">
       <div class="card p-3">
@@ -100,8 +148,39 @@
 
     <div class="col-md-4">
       <div class="card p-3">
-        <h6>Discrepancias abiertas</h6>
-        <p class="mb-0">2 casos por resolución</p>
+        <h6>Vencimientos críticos (&lt; 30 días)</h6>
+
+        {% if lotes_vencen_30 %}
+          <ul class="list-group list-group-flush">
+            {% for lote in lotes_vencen_30 %}
+            <li class="list-group-item d-flex justify-content-between">
+              <span>{{ lote.insumo.nombre }} — <strong>{{ lote.lote }}</strong></span>
+              <span class="badge bg-danger">{{ lote.vencimiento }}</span>
+            </li>
+            {% endfor %}
+          </ul>
+        {% else %}
+          <p class="text-success mb-0">No hay lotes críticos</p>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="col-md-4">
+      <div class="card p-3">
+        <h6>Vencimientos próximos (30–60 días)</h6>
+
+        {% if lotes_vencen_30_60 %}
+        <ul class="list-group list-group-flush">
+          {% for lote in lotes_vencen_30_60 %}
+          <li class="list-group-item d-flex justify-content-between">
+            <span>{{ lote.insumo.nombre }} — <strong>{{ lote.lote }}</strong></span>
+            <span class="badge bg-warning text-dark">{{ lote.vencimiento }}</span>
+          </li>
+          {% endfor %}
+        </ul>
+        {% else %}
+          <p class="text-success mb-0">No hay lotes próximos a vencer</p>
+        {% endif %}
       </div>
     </div>
   </div>
@@ -116,7 +195,7 @@
 <div class="container-fluid mt-3">
   <h4>Panel Jefe de Farmacia</h4>
   <div class="row">
-    <div class="col-md-6">
+    <div class="col-md-4">
       <div class="card p-3">
         <h6>Stock fármacos bajos</h6>
         <p class="mb-0">
@@ -131,14 +210,49 @@
       </div>
     </div>
 
-
-
-    <div class="col-md-6">
+    <div class="col-md-4">
       <div class="card p-3">
-        <h6>Dispensaciones hoy</h6>
-        <h2>{{ dispensaciones_hoy }}</h2>
+        <h6>Vencimientos críticos (&lt; 30 días)</h6>
+
+        {% if lotes_farmacia_vencen_30 %}
+          <ul class="list-group list-group-flush">
+            {% for med in lotes_farmacia_vencen_30 %}
+            <li class="list-group-item d-flex justify-content-between">
+              <span>{{ med.nombre }} — <strong>{{ med.lote }}</strong></span>
+              <span class="badge bg-danger">{{ med.fecha_vencimiento }}</span>
+            </li>
+            {% endfor %}
+          </ul>
+        {% else %}
+          <p class="text-success mb-0">No hay fármacos críticos</p>
+        {% endif %}
       </div>
     </div>
+
+    <div class="col-md-4">
+      <div class="card p-3">
+        <h6>Vencimientos próximos (30–60 días)</h6>
+
+        {% if lotes_farmacia_vencen_30_60 %}
+        <ul class="list-group list-group-flush">
+          {% for med in lotes_farmacia_vencen_30_60 %}
+          <li class="list-group-item d-flex justify-content-between">
+            <span>{{ med.nombre }} — <strong>{{ med.lote }}</strong></span>
+            <span class="badge bg-warning text-dark">{{ med.fecha_vencimiento }}</span>
+          </li>
+          {% endfor %}
+        </ul>
+        {% else %}
+          <p class="text-success mb-0">No hay fármacos próximos</p>
+        {% endif %}
+      </div>
+    </div>
+
+
+  </div>
+  <div class="card mt-3 p-3">
+    <h6>Reportes recientes</h6>
+    <a class="btn btn-outline-primary" href="{% url 'reports' %}">Ver reportes</a>
   </div>
 </div>
 {% endif %}

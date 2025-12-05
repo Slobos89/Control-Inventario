@@ -1,25 +1,27 @@
 {% extends "core/base.html" %}
-{% block titlepage %}Facturas Ingresadas{% endblock %}
+{% block titlepage %}Facturas de Farmacia{% endblock %}
 
 {% block principal %}
 <div class="container mt-4">
-  {% if request.user.perfil.rol == "JEFE_BODEGA" %}
+
   <div class="d-flex justify-content-between align-items-center mb-3">
     <h3>Facturas Ingresadas</h3>
-    <a href="{% url 'inventario:register_entry' %}" class="btn btn-primary">
+
+    <a href="{% url 'farmacia:crear_factura' %}" class="btn btn-primary">
       ➕ Ingresar nueva factura
     </a>
   </div>
-  {% endif %}
 
   <div class="card p-3 shadow-sm">
     <table class="table table-striped">
       <thead>
         <tr>
-          <th>Folio</th>
-          <th>Fecha Emisión</th>
+          <th>Número</th>
+          <th>Fecha</th>
           <th>Proveedor</th>
+          <th>Giro</th>
           <th>Usuario</th>
+          <th></th>
         </tr>
       </thead>
 
@@ -29,14 +31,20 @@
             <tr>
               <td>{{ f.folio }}</td>
               <td>{{ f.fecha_emision|date:'d-m-Y' }}</td>
-              <td>{{ f.proveedor_nombre }}</td>
+              <td>{{ f.proveedor_nombre|default:"-" }}</td>
+              <td>{{ f.proveedor_giro|default:"-" }}</td>
               <td>{{ f.usuario.username }}</td>
-              <td><a href="{% url 'inventario:factura_detalle' f.pk %}" class="btn btn-sm btn-outline-primary">Ver detalle</a></td>
+
+              <td>
+                <a href="{% url 'farmacia:factura_detalle' f.pk %}" class="btn btn-sm btn-outline-primary">
+                  Ver detalle
+                </a>
+              </td>
             </tr>
           {% endfor %}
         {% else %}
           <tr>
-            <td colspan="4" class="text-center text-muted">
+            <td colspan="5" class="text-center text-muted">
               No hay facturas registradas.
             </td>
           </tr>

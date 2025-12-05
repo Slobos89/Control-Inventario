@@ -16,13 +16,7 @@
       <input class="form-control" type="date" name="to">
     </div>
 
-    <div class="col-md-3">
-      <label class="form-label">Tipo de reporte</label>
-      <select class="form-select" name="type">
-        <option value="movimiento">Movimiento insumos</option>
-        <option value="consumo">Consumo farmacia</option>
-      </select>
-    </div>
+  
 
     <div class="col-md-3">
       <button class="btn btn-primary">Generar</button>
@@ -32,14 +26,16 @@
   <div class="card p-3">
     <h6>Resultados</h6>
     <table class="table table-sm">
-      <thead><tr><th>Fecha</th><th>Tipo</th><th>Descripción</th><th>Acciones</th></tr></thead>
+      <thead><tr><th>Fecha</th><th>Tipo</th><th>Descripción</th><th>Cantidad</th><th>Acciones</th></tr></thead>
       <tbody>
-        {% if movimientos %}
-          {% for mov in movimientos %}
+      {% if user.perfil.rol == "JEFE_BODEGA" %}
+        {% if movimientosB %}
+          {% for mov in movimientosB %}
             <tr>
               <td>{{ mov.fecha|date:"Y-m-d H:i" }}</td>
               <td>{{ mov.tipo }}</td>
-              <td>{{ mov.insumo.nombre }} - {{ mov.cantidad }}</td>
+              <td>{{ mov.insumo.nombre }}</td>
+              <td>{{ mov.cantidad }}</td>
               <td><button class="btn btn-sm btn-outline-secondary">Exportar</button></td>
             </tr>
           {% endfor %}
@@ -50,6 +46,38 @@
             </td>
           </tr>
         {% endif %}
+      {% endif %}
+      {% if user.perfil.rol == "JEFE_FARMACIA" %}
+        {% if movimientosF %}
+          {% for mov in movimientosF %}
+            <tr>
+              <td>{{ mov.fecha|date:"Y-m-d H:i" }}</td>
+              <td>{{ mov.tipo }}</td>
+              
+              <!-- Mostrar el nombre correcto: medicamento o insumo -->
+              <td>
+                {% if mov.medicamento %}
+                    {{ mov.medicamento.nombre }} 
+                {% elif mov.insumo %}
+                    {{ mov.insumo.nombre }} 
+                {% else %}
+                    Sin descripción
+                {% endif %}
+              </td>
+              <td>{{ mov.cantidad }}</td>
+              <td>
+                <button class="btn btn-sm btn-outline-secondary">Exportar</button>
+              </td>
+            </tr>
+          {% endfor %}
+        {% else %}
+          <tr>
+            <td colspan="4" class="text-center text-muted">
+                No hay movimientos registrados.
+            </td>
+          </tr>
+        {% endif %}
+      {% endif %}
       </tbody>
     </table>
   </div>

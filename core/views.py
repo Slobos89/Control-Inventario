@@ -4,27 +4,29 @@ from django.contrib.auth.models import User
 from django.db.models import F, Sum
 from django.utils import timezone
 from django.utils.timezone import now
-from datetime import date
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.db import models 
+from datetime import date, timedelta
 
-from inventario.models import Insumo, Movimiento
+from inventario.models import *
 from inventario.models import Movimiento as MovimientoBodega
-from farmacia.models import Medicamento, MovimientoFarmacia, SolicitudReposicion
+from farmacia.models import *
 
 def index(request):
     return render(request, "core/index.html")
 
+
 @login_required
 def dashboard(request):
-
+    hoy = date.today()
     rol = request.user.perfil.rol
 
     # ---------------------------
     # MÉTRICAS GENERALES
     # ---------------------------
 
+    # Total usuarios (solo Admin)
     total_usuarios = User.objects.count() if rol == "ADMIN" else None
 
     # Insumos críticos en bodega
@@ -32,45 +34,136 @@ def dashboard(request):
         stock__lte=F("stock_minimo")
     ).count()
 
-    # insumos criticos en lista
-
-    insumos_criticos_lista = Insumo.objects.filter(stock__lte=models.F("stock_minimo"))
+    insumos_criticos_lista = Insumo.objects.filter(
+        stock__lte=F("stock_minimo")
+    )
 
     # Fármacos críticos en farmacia
     farmacos_criticos = Medicamento.objects.filter(
         stock__lte=F("stock_critico")
     ).count()
 
-    # Fármacos críticos en lista
-    farmacos_criticos_lista = Medicamento.objects.filter(stock__lte=models.F('stock_critico'))
+    farmacos_criticos_lista = Medicamento.objects.filter(
+        stock__lte=F("stock_critico")
+    )
 
-    # Solicitudes pendientes para Jefe de Bodega
-    solicitudes_pendientes_bodega = SolicitudReposicion.objects.filter(estado="PENDIENTE").count()
+    # Solicitudes pendientes (bodega)
+    solicitudes_pendientes_bodega = SolicitudReposicion.objects.filter(
+        estado="PENDIENTE"
+    ).count()
 
-    # Solicitudes pendientes creadas por Farmacia (para mostrarles a ellos)
-    solicitudes_pendientes_farmacia = SolicitudReposicion.objects.filter(estado="PENDIENTE",usuario=request.user).count()
+    # Solicitudes pendientes del usuario (farmacia)
+    solicitudes_pendientes_farmacia = SolicitudReposicion.objects.filter(
+        estado="PENDIENTE",
+        usuario=request.user
+    ).count()
 
-    # Últimos movimientos (unificados)
+    # Últimos movimientos
     ult_mov_bodega = Movimiento.objects.order_by("-fecha")[:5]
     ult_mov_farmacia = MovimientoFarmacia.objects.order_by("-fecha")[:5]
 
-    # Dispensaciones HOY (solo farmacia)
+    # ---------------------------------
+    # ALERTAS DE VENCIMIENTO - Bodega
+    # ---------------------------------
+
+    rango_30 = hoy + timedelta(days=30)
+    rango_60 = hoy + timedelta(days=60)
+
+    # Lotes que vencen en menos de 30 días
+    vencen_30 = ItemFactura.objects.filter(
+        vencimiento__isnull=False,
+        vencimiento__gte=hoy,
+        vencimiento__lte=rango_30
+    ).count()
+
+    # Lotes que vencen entre 30 y 60 días
+    vencen_30_60 = ItemFactura.objects.filter(
+        vencimiento__isnull=False,
+        vencimiento__gt=rango_30,
+        vencimiento__lte=rango_60
+    ).count()
+
+    # lista vencimientos
+    lotes_vencen_30 = ItemFactura.objects.filter(
+        vencimiento__isnull=False,
+        vencimiento__gte=hoy,
+        vencimiento__lte=rango_30
+    ).order_by("vencimiento")
+
+    lotes_vencen_30_60 = ItemFactura.objects.filter(
+        vencimiento__isnull=False,
+        vencimiento__gt=rango_30,
+        vencimiento__lte=rango_60
+    ).order_by("vencimiento")
+
+    # ---------------------------------
+    # ALERTAS DE VENCIMIENTO - Farmacia
+    # ---------------------------------
+
+    vencen_30_farm = Medicamento.objects.filter(
+        fecha_vencimiento__isnull=False,
+        fecha_vencimiento__gte=hoy,
+        fecha_vencimiento__lte=rango_30
+    ).count()
+
+    vencen_30_60_farm = Medicamento.objects.filter(
+        fecha_vencimiento__isnull=False,
+        fecha_vencimiento__gt=rango_30,
+        fecha_vencimiento__lte=rango_60
+    ).count()
+
+    # Listas vencimientos
+    lotes_farmacia_vencen_30 = Medicamento.objects.filter(
+        fecha_vencimiento__gte=hoy,
+        fecha_vencimiento__lte=rango_30
+    ).order_by("fecha_vencimiento")
+
+    lotes_farmacia_vencen_30_60 = Medicamento.objects.filter(
+        fecha_vencimiento__gt=rango_30,
+        fecha_vencimiento__lte=rango_60
+    ).order_by("fecha_vencimiento")
+
+    # ---------------------------
+    # DISPENSACIONES HOY
+    # ---------------------------
+
     dispensaciones_hoy = MovimientoFarmacia.objects.filter(
         tipo="SALIDA",
-        fecha__date=date.today()
+        fecha__date=hoy
     ).aggregate(total=Sum("cantidad"))["total"] or 0
+
+    # ---------------------------
+    # CONTEXTO
+    # ---------------------------
 
     contexto = {
         "rol": rol,
         "total_usuarios": total_usuarios,
+
         "insumos_criticos": insumos_criticos,
         "insumos_criticos_lista": insumos_criticos_lista,
+
         "farmacos_criticos": farmacos_criticos,
         "farmacos_criticos_lista": farmacos_criticos_lista,
+
         "solicitudes_pendientes_bodega": solicitudes_pendientes_bodega,
         "solicitudes_pendientes_farmacia": solicitudes_pendientes_farmacia,
+
         "ult_mov_bodega": ult_mov_bodega,
         "ult_mov_farmacia": ult_mov_farmacia,
+
+        # VENCIMIENTOS BODEGA
+        "vencimientos_30": vencen_30,
+        "vencimientos_30_60": vencen_30_60,
+        "lotes_vencen_30": lotes_vencen_30,
+        "lotes_vencen_30_60": lotes_vencen_30_60,
+
+        # VENCIMIENTOS FARMACIA
+        "vencimientos_farmacia_30": vencen_30_farm,
+        "vencimientos_farmacia_30_60": vencen_30_60_farm,
+        "lotes_farmacia_vencen_30": lotes_farmacia_vencen_30,
+        "lotes_farmacia_vencen_30_60": lotes_farmacia_vencen_30_60,
+
         "dispensaciones_hoy": dispensaciones_hoy,
     }
 
@@ -80,20 +173,28 @@ def reports(request):
     # --- Filtros ---
     from_date = request.GET.get("from")
     to_date = request.GET.get("to")
-    report_type = request.GET.get("type", "movimiento")
+    report_type = request.GET.get("type", "movimiento")  # por defecto bodega
 
-    movimientos = Movimiento.objects.all().order_by("-fecha")
+    # ----------------------------
+    # SELECCIÓN DE ORIGEN DE DATOS
+    # ----------------------------
+    
+    movimientosB = Movimiento.objects.all().order_by("-fecha")
+    
+    movimientosF = MovimientoFarmacia.objects.all().order_by("-fecha")
 
-    # Filtrar por fecha desde
+    # ----------------------------
+    # FILTROS DE FECHAS
+    # ----------------------------
     if from_date:
         movimientos = movimientos.filter(fecha__date__gte=from_date)
 
-    # Filtrar por fecha hasta
     if to_date:
         movimientos = movimientos.filter(fecha__date__lte=to_date)
 
     context = {
-        "movimientos": movimientos,
+        "movimientosB": movimientosB,
+        "movimientosF": movimientosF,
         "from": from_date,
         "to": to_date,
         "type": report_type,
