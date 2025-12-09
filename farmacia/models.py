@@ -88,7 +88,7 @@ class FacturaFarmacia(models.Model):
     ]
 
     # Número de foliación (folio del SII)
-    folio = models.PositiveIntegerField(unique=True)
+    folio = models.PositiveIntegerField()
 
     tipo_dte = models.PositiveSmallIntegerField(choices=TIPO_DTE, default=33)
 
@@ -105,6 +105,14 @@ class FacturaFarmacia(models.Model):
 
     # PDF opcional del DTE
     archivo_pdf = models.FileField(upload_to="facturas_farmacia/", blank=True, null=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["folio", "proveedor_rut"],
+                name="unique_folio_por_proveedor"
+            )
+        ]
 
     def __str__(self):
         return f"DTE {self.folio} - {self.proveedor_nombre}"

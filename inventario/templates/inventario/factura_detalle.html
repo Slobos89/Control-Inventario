@@ -12,7 +12,8 @@
 
     <h4>Factura Folio {{ factura.folio }}</h4>
     <p><strong>Proveedor:</strong> {{ factura.proveedor_nombre }}</p>
-    <p><strong>RUT:</strong> {{ factura.proveedor_rut }}</p>
+    <p><strong>Rut Proveedor:</strong> {{ factura.proveedor_rut }}</p>
+    <p><strong>Giro:</strong> {{ factura.proveedor_giro|default:"-" }}</p>
     <p><strong>Fecha de emisión:</strong> {{ factura.fecha_emision|date:"d-m-Y" }}</p>
     <p><strong>Registrada por:</strong> {{ factura.usuario.username }}</p>
 

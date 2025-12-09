@@ -11,6 +11,7 @@
   <div class="card p-4 shadow-sm">
     <h4>Factura Nº {{ factura.folio }}</h4>
     <p><strong>Proveedor:</strong> {{ factura.proveedor_nombre|default:"-" }}</p>
+    <p><strong>Rut Proveedor:</strong> {{ factura.proveedor_rut|default:"-" }}</p>
     <p><strong>Giro:</strong> {{ factura.proveedor_giro|default:"-" }}</p>
 
     <p><strong>Fecha:</strong> {{ factura.fecha_emision|date:"d-m-Y" }}</p>

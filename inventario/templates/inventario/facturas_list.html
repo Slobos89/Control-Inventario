@@ -19,6 +19,8 @@
           <th>Folio</th>
           <th>Fecha Emisión</th>
           <th>Proveedor</th>
+          <th>Rut Proveedor</th>
+          <th>Giro</th>
           <th>Usuario</th>
         </tr>
       </thead>
@@ -29,7 +31,9 @@
             <tr>
               <td>{{ f.folio }}</td>
               <td>{{ f.fecha_emision|date:'d-m-Y' }}</td>
-              <td>{{ f.proveedor_nombre }}</td>
+              <td>{{ f.proveedor_nombre|default:"-" }}</td>
+              <td>{{ f.proveedor_rut|default:"-" }}</td>
+              <td>{{ f.proveedor_giro|default:"-" }}</td>
               <td>{{ f.usuario.username }}</td>
               <td><a href="{% url 'inventario:factura_detalle' f.pk %}" class="btn btn-sm btn-outline-primary">Ver detalle</a></td>
             </tr>

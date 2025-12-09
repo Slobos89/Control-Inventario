@@ -41,7 +41,7 @@ class FacturaIngreso(models.Model):
         (56, "Nota de Débito"),
     ]
 
-    folio = models.PositiveIntegerField(unique=True)  # Número SII único
+    folio = models.PositiveIntegerField()  
     tipo_dte = models.PositiveSmallIntegerField(choices=TIPO_DTE, default=33)
 
     fecha_emision = models.DateField()
@@ -57,6 +57,14 @@ class FacturaIngreso(models.Model):
 
     # PDF opcional del DTE
     archivo_pdf = models.FileField(upload_to="facturas/", blank=True, null=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["folio", "proveedor_rut"],
+                name="unique_folio_ingreso_por_proveedor"
+            )
+        ]
 
     def __str__(self):
         return f"DTE {self.folio} - {self.proveedor_nombre}"
@@ -147,3 +155,4 @@ def review_received(request, factura_id):
         "factura": factura,
         "items": items
     })
+

@@ -19,6 +19,7 @@
           <th>Número</th>
           <th>Fecha</th>
           <th>Proveedor</th>
+          <th>Rut Proveedor</th>
           <th>Giro</th>
           <th>Usuario</th>
           <th></th>
@@ -32,6 +33,7 @@
               <td>{{ f.folio }}</td>
               <td>{{ f.fecha_emision|date:'d-m-Y' }}</td>
               <td>{{ f.proveedor_nombre|default:"-" }}</td>
+              <td>{{ f.proveedor_rut|default:"-" }}</td>
               <td>{{ f.proveedor_giro|default:"-" }}</td>
               <td>{{ f.usuario.username }}</td>
 
