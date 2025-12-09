@@ -26,7 +26,6 @@ def dashboard(request):
     # MÉTRICAS GENERALES
     # ---------------------------
 
-    # Total usuarios (solo Admin)
     total_usuarios = User.objects.count() if rol == "ADMIN" else None
 
     # Insumos críticos en bodega
@@ -47,43 +46,40 @@ def dashboard(request):
         stock__lte=F("stock_critico")
     )
 
-    # Solicitudes pendientes (bodega)
+    # Solicitudes
     solicitudes_pendientes_bodega = SolicitudReposicion.objects.filter(
         estado="PENDIENTE"
     ).count()
 
-    # Solicitudes pendientes del usuario (farmacia)
     solicitudes_pendientes_farmacia = SolicitudReposicion.objects.filter(
-        estado="PENDIENTE",
-        usuario=request.user
+        estado="PENDIENTE", usuario=request.user
     ).count()
 
-    # Últimos movimientos
+    # Movimientos recientes
     ult_mov_bodega = Movimiento.objects.order_by("-fecha")[:5]
     ult_mov_farmacia = MovimientoFarmacia.objects.order_by("-fecha")[:5]
 
     # ---------------------------------
-    # ALERTAS DE VENCIMIENTO - Bodega
+    # ALERTAS DE VENCIMIENTO - BODEGA
     # ---------------------------------
 
     rango_30 = hoy + timedelta(days=30)
     rango_60 = hoy + timedelta(days=60)
 
-    # Lotes que vencen en menos de 30 días
+    # Cantidades por rango
     vencen_30 = ItemFactura.objects.filter(
         vencimiento__isnull=False,
         vencimiento__gte=hoy,
         vencimiento__lte=rango_30
     ).count()
 
-    # Lotes que vencen entre 30 y 60 días
     vencen_30_60 = ItemFactura.objects.filter(
         vencimiento__isnull=False,
         vencimiento__gt=rango_30,
         vencimiento__lte=rango_60
     ).count()
 
-    # lista vencimientos
+    # Listas
     lotes_vencen_30 = ItemFactura.objects.filter(
         vencimiento__isnull=False,
         vencimiento__gte=hoy,
@@ -96,32 +92,36 @@ def dashboard(request):
         vencimiento__lte=rango_60
     ).order_by("vencimiento")
 
+
     # ---------------------------------
-    # ALERTAS DE VENCIMIENTO - Farmacia
+    # ALERTAS DE VENCIMIENTO - FARMACIA
     # ---------------------------------
 
-    vencen_30_farm = Medicamento.objects.filter(
-        fecha_vencimiento__isnull=False,
-        fecha_vencimiento__gte=hoy,
-        fecha_vencimiento__lte=rango_30
+    # Cantidades por rango
+    vencimientos_farmacia_30 = LoteFarmacia.objects.filter(
+        vencimiento__isnull=False,
+        vencimiento__gte=hoy,
+        vencimiento__lte=rango_30
     ).count()
 
-    vencen_30_60_farm = Medicamento.objects.filter(
-        fecha_vencimiento__isnull=False,
-        fecha_vencimiento__gt=rango_30,
-        fecha_vencimiento__lte=rango_60
+    vencimientos_farmacia_30_60 = LoteFarmacia.objects.filter(
+        vencimiento__isnull=False,
+        vencimiento__gt=rango_30,
+        vencimiento__lte=rango_60
     ).count()
 
-    # Listas vencimientos
-    lotes_farmacia_vencen_30 = Medicamento.objects.filter(
-        fecha_vencimiento__gte=hoy,
-        fecha_vencimiento__lte=rango_30
-    ).order_by("fecha_vencimiento")
+    # Listas
+    lotes_farmacia_vencen_30 = LoteFarmacia.objects.filter(
+        vencimiento__isnull=False,
+        vencimiento__gte=hoy,
+        vencimiento__lte=rango_30
+    ).order_by("vencimiento")
 
-    lotes_farmacia_vencen_30_60 = Medicamento.objects.filter(
-        fecha_vencimiento__gt=rango_30,
-        fecha_vencimiento__lte=rango_60
-    ).order_by("fecha_vencimiento")
+    lotes_farmacia_vencen_30_60 = LoteFarmacia.objects.filter(
+        vencimiento__isnull=False,
+        vencimiento__gt=rango_30,
+        vencimiento__lte=rango_60
+    ).order_by("vencimiento")
 
     # ---------------------------
     # DISPENSACIONES HOY
@@ -133,7 +133,7 @@ def dashboard(request):
     ).aggregate(total=Sum("cantidad"))["total"] or 0
 
     # ---------------------------
-    # CONTEXTO
+    # CONTEXTO FINAL
     # ---------------------------
 
     contexto = {
@@ -158,9 +158,9 @@ def dashboard(request):
         "lotes_vencen_30": lotes_vencen_30,
         "lotes_vencen_30_60": lotes_vencen_30_60,
 
-        # VENCIMIENTOS FARMACIA
-        "vencimientos_farmacia_30": vencen_30_farm,
-        "vencimientos_farmacia_30_60": vencen_30_60_farm,
+        # VENCIMIENTOS FARMACIA (CORRECTOS)
+        "vencimientos_farmacia_30": vencimientos_farmacia_30,
+        "vencimientos_farmacia_30_60": vencimientos_farmacia_30_60,
         "lotes_farmacia_vencen_30": lotes_farmacia_vencen_30,
         "lotes_farmacia_vencen_30_60": lotes_farmacia_vencen_30_60,
 

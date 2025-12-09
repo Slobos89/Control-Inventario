@@ -2,6 +2,7 @@ from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.utils.encoding import smart_str
+from itertools import zip_longest
 from .models import *
 from .forms import *
 from datetime import datetime
@@ -310,6 +311,7 @@ def crear_factura_farmacia(request):
 
     if request.method == "POST":
         factura_form = FacturaFarmaciaForm(request.POST)
+
         if factura_form.is_valid():
             factura = factura_form.save(commit=False)
             factura.usuario = request.user
@@ -317,55 +319,80 @@ def crear_factura_farmacia(request):
 
             index = 1
             while True:
+
+                # Nombres esperados en el POST
                 medicamento_key = f"medicamento_{index}"
                 cantidad_key = f"cantidad_{index}"
                 lote_key = f"lote_{index}"
                 venc_key = f"vencimiento_{index}"
 
+                # Si no existe, terminamos
                 if medicamento_key not in request.POST:
-                    break 
-                
+                    break
+
                 medicamento_id = request.POST.get(medicamento_key)
 
+                # Si estaba la key pero vacía → seguimos
                 if not medicamento_id:
                     index += 1
                     continue
-                
+
                 cantidad = int(request.POST.get(cantidad_key, 0))
+                lote = request.POST.get(lote_key)
+                venc = request.POST.get(venc_key)
+
+                # Convertimos fecha
+                if venc:
+                    from datetime import datetime
+                    venc = datetime.strptime(venc, "%Y-%m-%d").date()
 
                 med = get_object_or_404(Medicamento, pk=medicamento_id)
 
-                ItemFacturaFarmacia.objects.create(
+                # Crear item factura
+                item = ItemFacturaFarmacia.objects.create(
                     factura=factura,
                     medicamento=med,
-                    cantidad=cantidad,
-                    lote=request.POST.get(lote_key),
-                    vencimiento=request.POST.get(venc_key) or None
+                    lote=lote,
+                    vencimiento=venc,
+                    cantidad=cantidad
                 )
 
+                # Crear lote para control de vencimiento
+                LoteFarmacia.objects.create(
+                    medicamento=med,
+                    lote=lote,
+                    vencimiento=venc,
+                    cantidad=cantidad
+                )
+
+                # Movimiento
                 MovimientoFarmacia.objects.create(
                     medicamento=med,
                     tipo="INGRESO",
                     cantidad=cantidad,
                     usuario=request.user,
-                    factura=factura
+                    factura=factura,
+                    observacion=f"Ingreso por factura {factura.folio}"
                 )
 
+                # Actualizar stock
                 med.stock += cantidad
                 med.save()
 
                 index += 1
 
-            messages.success(request,"Factura registrada correctamente.")
+            messages.success(request, "Factura registrada correctamente.")
             return redirect("farmacia:facturas_list")
+
         else:
             messages.error(request, "Corrige los errores del formulario.")
+
     else:
         factura_form = FacturaFarmaciaForm()
 
-    return render(request, "farmacia/crear_factura.html",{
-        "form":factura_form,
-        "medicamentos":medicamentos,
+    return render(request, "farmacia/crear_factura.html", {
+        "form": factura_form,
+        "medicamentos": medicamentos,
     })
 
 
@@ -385,3 +412,91 @@ def facturas_farmacia_list(request):
     return render(request, "farmacia/facturas_list.html", {
         "facturas": facturas
     })
+
+@login_required
+def dispense(request):
+    if not rol_permitido(request.user, ["JEFE_FARMACIA", "FUNC_FARMACIA"]):
+        messages.error(request, "No tienes permiso para dispensar medicamentos.")
+        return redirect("index")
+
+    medicamentos = Medicamento.objects.all().order_by("nombre")
+
+    if request.method == "POST":
+        receta = request.POST.get("receta_num")
+        paciente = request.POST.get("rut_paciente")
+
+        lista_meds = request.POST.getlist("medicamento[]")
+        lista_cants = request.POST.getlist("cantidad[]")
+        lista_obs = request.POST.getlist("observacion[]")
+
+        # Validación básica
+        if not receta or not paciente:
+            messages.error(request, "Debe ingresar receta y RUT.")
+            return redirect("farmacia:dispense")
+
+        # Iteramos cada fila
+        for med_id, cant, obs in zip_longest(lista_meds, lista_cants, lista_obs, fillvalue=""):
+
+            if not med_id or not cant:
+                continue  # Fila incompleta
+
+            medicamento = Medicamento.objects.get(id=med_id)
+            cant = int(cant)
+
+            # Validación stock
+            if cant > medicamento.stock:
+                messages.error(request, f"Stock insuficiente para {medicamento.nombre}. Disponible: {medicamento.stock}")
+                return redirect("farmacia:dispense")
+
+            # Crear dispensación
+            d = Dispensacion.objects.create(
+                receta=receta,
+                paciente_rut=paciente,
+                medicamento=medicamento,
+                cantidad=cant,
+                observacion=obs,
+                usuario=request.user,
+            )
+
+            # Descontar stock
+            medicamento.stock -= cant
+            medicamento.save()
+
+            # Registrar movimiento
+            MovimientoFarmacia.objects.create(
+                medicamento=medicamento,
+                tipo="SALIDA",
+                cantidad=cant,
+                usuario=request.user,
+                observacion=f"Dispensación receta {receta}"
+            )
+
+        messages.success(request, "Dispensación registrada correctamente.")
+        return redirect("farmacia:dispense")
+
+    return render(request, "farmacia/dispense.html", {
+        "medicamentos": medicamentos
+    })
+
+@login_required
+def dispensaciones_list(request):
+
+    if not rol_permitido(request.user, ["JEFE_FARMACIA", "FUNC_FARMACIA"]):
+        messages.error(request, "No tienes permiso para ver dispensaciones.")
+        return redirect("index")
+
+    dispensaciones = Dispensacion.objects.all().order_by("-fecha")
+
+    return render(request, "farmacia/dispensaciones_list.html", {
+        "dispensaciones": dispensaciones
+    })
+
+@login_required
+def dispensacion_detail(request, id):
+    if not rol_permitido(request.user, ["JEFE_FARMACIA", "FUNC_FARMACIA"]):
+        messages.error(request, "No tienes permiso para ver dispensaciones.")
+        return redirect("index")
+
+    d = get_object_or_404(Dispensacion, id=id)
+
+    return render(request, "farmacia/dispensacion_detail.html", {"d": d})

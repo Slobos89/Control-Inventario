@@ -1,0 +1,45 @@
+{% extends "core/base.html" %}
+{% block titlepage %}Detalle Dispensación{% endblock %}
+
+{% block principal %}
+<h3 class="mb-4">Detalle de dispensación</h3>
+
+<div class="card p-3">
+
+    <div class="row mb-3">
+        <div class="col-md-4">
+            <strong>Fecha:</strong> {{ d.fecha|date:"d/m/Y H:i" }}
+        </div>
+
+        <div class="col-md-4">
+            <strong>Receta Nº:</strong> {{ d.receta }}
+        </div>
+
+        <div class="col-md-4">
+            <strong>Paciente:</strong> {{ d.paciente_rut }}
+        </div>
+    </div>
+
+    <div class="row mb-3">
+        <div class="col-md-4">
+            <strong>Funcionario:</strong> {{ d.usuario.username }}
+        </div>
+
+        <div class="col-md-4">
+            <strong>Medicamento:</strong> {{ d.medicamento.nombre }}
+        </div>
+
+        <div class="col-md-4">
+            <strong>Cantidad:</strong> {{ d.cantidad }}
+        </div>
+    </div>
+
+    <div class="mb-3">
+        <strong>Observación:</strong><br>
+        {{ d.observacion|default:"(sin observaciones)" }}
+    </div>
+
+    <a href="{% url 'farmacia:dispensaciones_list' %}" class="btn btn-secondary mt-3">Volver</a>
+
+</div>
+{% endblock %}

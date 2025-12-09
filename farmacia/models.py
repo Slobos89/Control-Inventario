@@ -123,3 +123,24 @@ class ItemFacturaFarmacia(models.Model):
 
     def __str__(self):
         return f"{self.medicamento.nombre} x {self.cantidad}"
+
+class Dispensacion(models.Model):
+    receta = models.CharField(max_length=100)
+    paciente_rut = models.CharField(max_length=20)
+    medicamento = models.ForeignKey(Medicamento, on_delete=models.PROTECT)
+    cantidad = models.PositiveIntegerField()
+    fecha = models.DateTimeField(auto_now_add=True)
+    usuario = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
+    observacion = models.TextField(blank=True, null=True)
+
+    def __str__(self):
+        return f"Dispensación {self.receta} - {self.medicamento.nombre}"
+
+class LoteFarmacia(models.Model):
+    medicamento = models.ForeignKey(Medicamento, on_delete=models.CASCADE)
+    lote = models.CharField(max_length=100)
+    vencimiento = models.DateField()
+    cantidad = models.PositiveIntegerField()
+
+    def __str__(self):
+        return f"{self.medicamento.nombre} - Lote {self.lote} ({self.cantidad})"

@@ -218,8 +218,8 @@
           <ul class="list-group list-group-flush">
             {% for med in lotes_farmacia_vencen_30 %}
             <li class="list-group-item d-flex justify-content-between">
-              <span>{{ med.nombre }} — <strong>{{ med.lote }}</strong></span>
-              <span class="badge bg-danger">{{ med.fecha_vencimiento }}</span>
+              <span>{{ med.medicamento.nombre }} — <strong>{{ med.lote }}</strong></span>
+              <span class="badge bg-danger">{{ med.vencimiento|date:"d/m/Y" }}</span>
             </li>
             {% endfor %}
           </ul>
@@ -237,8 +237,8 @@
         <ul class="list-group list-group-flush">
           {% for med in lotes_farmacia_vencen_30_60 %}
           <li class="list-group-item d-flex justify-content-between">
-            <span>{{ med.nombre }} — <strong>{{ med.lote }}</strong></span>
-            <span class="badge bg-warning text-dark">{{ med.fecha_vencimiento }}</span>
+            <span>{{ med.medicamento.nombre }} — <strong>{{ med.lote }}</strong></span>
+            <span class="badge bg-warning text-dark">{{ med.vencimiento|date:"d/m/Y" }}</span>
           </li>
           {% endfor %}
         </ul>

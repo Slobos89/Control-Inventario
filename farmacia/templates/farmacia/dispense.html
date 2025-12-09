@@ -2,54 +2,105 @@
 {% block titlepage %}Dispensación{% endblock %}
 
 {% block principal %}
-<div class="container mt-4">
-  <h4>Dispensación de medicamentos</h4>
+<h3 class="mb-4">Dispensación de Medicamentos</h3>
 
-  <form class="card p-3" method="post" action="{% url 'farmacia:dispense' %}">
+<form method="POST">
     {% csrf_token %}
 
-    <div class="row mb-2">
-      <div class="col-md-4">
-        <label class="form-label">N° Receta</label>
-        <input class="form-control" name="receta">
-      </div>
+    <!-- Datos generales -->
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <label class="form-label">Receta Nº *</label>
+            <input type="text" class="form-control" name="receta_num" required>
+        </div>
 
-      <div class="col-md-4">
-        <label class="form-label">Paciente (RUT)</label>
-        <input class="form-control" name="paciente">
-      </div>
+        <div class="col-md-4">
+            <label class="form-label">RUT Paciente *</label>
+            <input type="text" class="form-control" name="rut_paciente" required>
+        </div>
 
-      <div class="col-md-4">
-        <label class="form-label">Funcionario</label>
-        <input class="form-control" value="{{ request.user.username }}" disabled>
-      </div>
+        <div class="col-md-4">
+          <label class="form-label">Funcionario</label>
+          <input class="form-control" value="{{ request.user.username }}" disabled>
+        </div>
     </div>
 
     <hr>
-    <h6>Detalle</h6>
 
-    <table class="table">
-      <thead>
+    <!-- Medicamentos -->
+    <h5 class="mb-3">Medicamentos</h5>
+
+    
+
+      <!-- FILA BASE -->
+    <table class="table table-bordered align-middle" id="tablaMedicamentos">
+      <thead class="table-light">
         <tr>
-          <th>Fármaco</th>
-          <th>Dosis</th>
-          <th>Cantidad</th>
+            <th style="width: 30%">Medicamento</th>
+            <th style="width: 10%">Cantidad</th>
+            <th style="width: 40%">Observación</th>
+            <th style="width: 5%"></th>
         </tr>
       </thead>
 
-      <tbody>
-        <tr>
-          <td>{{ form.medicamento }}</td>
-          <td><input class="form-control" name="dosis"></td>
-          <td>{{ form.cantidad }}</td>
+      <tbody id="medicamentos-body">
+        <tr class="med-row">
+          <td>
+            <select name="medicamento[]" class="form-select" required>
+              <option value="">Seleccione...</option>
+                {% for medicamento in medicamentos %}
+                  <option value="{{ medicamento.id }}">{{ medicamento.nombre }}</option>
+                {% endfor %}
+            </select>
+          </td>
+
+          <td>
+            <input type="number" name="cantidad[]" class="form-control" min="1" required>
+          </td>
+
+          <td>
+            <textarea name="dosis[]" class="form-control" rows="1"></textarea>
+          </td>
+
+          <td class="text-center">
+            <button type="button" class="btn btn-sm btn-danger btn-remove">✖</button>
+          </td>
         </tr>
       </tbody>
     </table>
+    
 
-    <div class="d-flex justify-content-between">
-      <button class="btn btn-outline-secondary" type="button">Reimprimir receta</button>
-      <button class="btn btn-primary" type="submit">Confirmar dispensación</button>
-    </div>
-  </form>
-</div>
+    <!-- Botón agregar medicamento -->
+    <button type="button" id="agregarFila" class="btn btn-outline-primary mb-3">
+    ➕ Agregar medicamento
+    </button>
+
+    <!-- Botón final -->
+    <button type="submit" class="btn btn-primary w-100 btn-lg">
+        Dispensar
+    </button>
+</form>
+
+<script>
+document.getElementById("agregarFila").addEventListener("click", function () {
+    let body = document.getElementById("medicamentos-body");
+    let firstRow = document.querySelector(".med-row");
+    let newRow = firstRow.cloneNode(true);
+
+    // Limpiar valores
+    newRow.querySelectorAll("input, textarea, select").forEach(i => i.value = "");
+
+    body.appendChild(newRow);
+});
+
+// Eliminar fila
+document.addEventListener("click", function(e) {
+    if (e.target.classList.contains("btn-remove")) {
+        let rows = document.querySelectorAll(".med-row");
+        if (rows.length > 1) {
+            e.target.closest(".med-row").remove();
+        }
+    }
+});
+</script>
 {% endblock %}

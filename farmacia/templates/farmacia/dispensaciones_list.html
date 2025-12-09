@@ -1,0 +1,40 @@
+{% extends "core/base.html" %}
+{% block titlepage %}Dispensaciones{% endblock %}
+
+{% block principal %}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h3 class="mb-4">Dispensaciones realizadas</h3>
+    <a href="{% url 'farmacia:dispense' %}" class="btn btn-success">➕ Nueva dispensación</a>
+</div>
+
+<table class="table table-striped table-hover">
+    <thead class="table-dark">
+        <tr>
+            <th>Fecha</th>
+            <th>Receta</th>
+            <th>Paciente</th>
+            <th>Funcionario</th>
+            <th>Medicamento</th>
+            <th>Cantidad</th>
+            <th></th>
+        </tr>
+    </thead>
+
+    <tbody>
+        {% for d in dispensaciones %}
+        <tr>
+            <td>{{ d.fecha|date:"d/m/Y H:i" }}</td>
+            <td>{{ d.receta }}</td>
+            <td>{{ d.paciente_rut }}</td>
+            <td>{{ d.usuario.username }}</td>
+            <td>{{ d.medicamento.nombre }}</td>
+            <td>{{ d.cantidad }}</td>
+            <td>
+                <a class="btn btn-sm btn-primary" href="{% url 'farmacia:dispense_detail' d.id %}">Ver</a>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}
