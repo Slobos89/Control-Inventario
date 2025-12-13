@@ -4,11 +4,10 @@ from django.contrib.auth.decorators import login_required
 from django.forms import inlineformset_factory 
 from farmacia.models import SolicitudReposicion, ItemSolicitud
 from .models import *
-from .forms import (
-    FacturaIngresoForm,
-    UploadFileForm,
-)
+from .forms import *
 from django.db import transaction
+from datetime import date
+import datetime
 import csv
 import io
 
@@ -260,3 +259,84 @@ def solicitud_rechazar(request, pk):
 
     messages.success(request, "Solicitud rechazada.")
     return redirect("inventario:solicitud_detalle", pk=pk)
+
+@login_required
+def insumos_vencidos(request):
+    hoy = date.today()
+
+    vencidos = ItemFactura.objects.filter(
+        vencimiento__isnull=False,
+        vencimiento__lt=hoy,
+        cantidad__gt=0
+    ).select_related("insumo")
+
+    return render(request, "inventario/desechar_insumo.html", {
+        "vencidos": vencidos
+    })
+
+@login_required
+def desechar_insumo(request):
+    hoy = date.today()
+
+    vencidos = ItemFactura.objects.filter(
+        vencimiento__isnull=False,
+        vencimiento__lt=hoy,
+        cantidad__gt=0
+    ).select_related("insumo")
+
+    if request.method == "POST":
+        print("POST:", request.POST)  # ← DEBUG CLAVE
+
+        item_id = request.POST.get("item_id")
+        cantidad = int(request.POST.get("cantidad"))
+        motivo = request.POST.get("motivo")
+        observacion = request.POST.get("observacion", "")
+
+        if not item_id:
+            messages.error(request, "Debe seleccionar un insumo.")
+            return redirect("inventario:desechar_insumo")
+
+        item = get_object_or_404(ItemFactura, pk=item_id)
+
+        if cantidad <= 0 or cantidad > item.cantidad:
+            messages.error(request, "Cantidad inválida.")
+            return redirect("inventario:desechar_insumo")
+
+        DesechoBodega.objects.create(
+            insumo=item.insumo,
+            item_factura=item,
+            lote=item.lote,
+            cantidad=cantidad,
+            motivo=motivo,
+            observacion=observacion,
+            usuario=request.user
+        )
+
+        item.insumo.stock -= cantidad
+        item.insumo.save()
+
+        item.cantidad -= cantidad
+        item.save()
+
+        Movimiento.objects.create(
+            insumo=item.insumo,
+            tipo="DESECHO",
+            cantidad=cantidad,
+            usuario=request.user,
+            observacion=f"{motivo} - Lote {item.lote}"
+        )
+
+        messages.success(request, "Desecho registrado correctamente.")
+        return redirect("inventario:historial_desechos")
+
+    return render(request, "inventario/desechar_insumo.html", {
+        "vencidos": vencidos
+    })
+
+@login_required
+def historial_desechos(request):
+    desechos = DesechoBodega.objects.select_related("insumo", "usuario").order_by("-fecha")
+
+    return render(request, "inventario/historial_desechos.html", {
+        "desechos": desechos
+    })

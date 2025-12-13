@@ -8,6 +8,7 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.db import models 
 from datetime import date, timedelta
+import datetime
 
 from inventario.models import *
 from inventario.models import Movimiento as MovimientoBodega
@@ -92,6 +93,19 @@ def dashboard(request):
         vencimiento__lte=rango_60
     ).order_by("vencimiento")
 
+    # Lotes vencidos (bodega)
+    lotes_vencidos_bodega = ItemFactura.objects.filter(
+        vencimiento__isnull=False,
+        vencimiento__lt=hoy,
+        cantidad__gt=0
+    ).count()
+
+    lotes_vencidos_bodega_lista = ItemFactura.objects.filter(
+        vencimiento__isnull=False,
+        vencimiento__lt=hoy,
+        cantidad__gt=0
+    ).order_by("vencimiento")
+
 
     # ---------------------------------
     # ALERTAS DE VENCIMIENTO - FARMACIA
@@ -122,6 +136,17 @@ def dashboard(request):
         vencimiento__gt=rango_30,
         vencimiento__lte=rango_60
     ).order_by("vencimiento")
+
+    # Lotes vencidos (farmacia)
+    vencidos_farmacia = Medicamento.objects.filter(
+        fecha_vencimiento__isnull=False,
+        fecha_vencimiento__lt=hoy,
+    ).count()
+
+    lotes_vencidos_farmacia_lista = Medicamento.objects.filter(
+        fecha_vencimiento__isnull=False,
+        fecha_vencimiento__lt=hoy,
+    ).order_by("fecha_vencimiento")
 
     # ---------------------------
     # DISPENSACIONES HOY
@@ -157,12 +182,16 @@ def dashboard(request):
         "vencimientos_30_60": vencen_30_60,
         "lotes_vencen_30": lotes_vencen_30,
         "lotes_vencen_30_60": lotes_vencen_30_60,
+        "lotes_vencidos_bodega": lotes_vencidos_bodega,
+        "lotes_vencidos_bodega_lista": lotes_vencidos_bodega_lista,
 
-        # VENCIMIENTOS FARMACIA (CORRECTOS)
+        # VENCIMIENTOS FARMACIA
         "vencimientos_farmacia_30": vencimientos_farmacia_30,
         "vencimientos_farmacia_30_60": vencimientos_farmacia_30_60,
         "lotes_farmacia_vencen_30": lotes_farmacia_vencen_30,
         "lotes_farmacia_vencen_30_60": lotes_farmacia_vencen_30_60,
+        "lotes_vencidos_farmacia": vencidos_farmacia,
+        "lotes_vencidos_farmacia_lista": lotes_vencidos_farmacia_lista,
 
         "dispensaciones_hoy": dispensaciones_hoy,
     }

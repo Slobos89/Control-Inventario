@@ -270,34 +270,45 @@ def dispensar_medicamento(request):
 # ----------------------
 @login_required
 def solicitud_crear(request):
+
     if request.method == "POST":
-        form = SolicitudReposicionForm(request.POST)
-        formset = ItemSolicitudFormSet(request.POST)
 
-        if form.is_valid() and formset.is_valid():
-            solicitud = form.save(commit=False)
-            solicitud.usuario = request.user
-            solicitud.save()
+        area = request.POST.get("area")
+        solicitud = SolicitudReposicion.objects.create(
+            usuario=request.user,
+            area=area
+        )
 
-            for f in formset:
-                if f.cleaned_data:
-                    ItemSolicitud.objects.create(
-                        solicitud=solicitud,
-                        insumo=f.cleaned_data["insumo"],
-                        cantidad=f.cleaned_data["cantidad"]
-                    )
+        index = 1
+        while True:
+            insumo_key = f"insumo_{index}"
+            cantidad_key = f"cantidad_{index}"
 
-            messages.success(request, "Solicitud creada correctamente.")
-            return redirect("farmacia:solicitudes_mias")
+            if insumo_key not in request.POST:
+                break
 
-    else:
-        form = SolicitudReposicionForm()
-        formset = ItemSolicitudFormSet()
+            insumo_id = request.POST.get(insumo_key)
+            if not insumo_id:
+                index += 1
+                continue
 
-    return render(request, "farmacia/solicitud_crear.html", {
-        "form": form,
-        "formset": formset
-    })
+            cantidad = int(request.POST.get(cantidad_key, 0))
+
+            insumo = get_object_or_404(Insumo, pk=insumo_id)
+
+            ItemSolicitud.objects.create(
+                solicitud=solicitud,
+                insumo=insumo,
+                cantidad=cantidad
+            )
+
+            index += 1
+
+        messages.success(request, "Solicitud creada correctamente.")
+        return redirect("farmacia:solicitudes_mias")
+
+    insumos = Insumo.objects.all().order_by("nombre")
+    return render(request, "farmacia/solicitud_crear.html", {"insumos": insumos})
 
 @login_required
 def solicitudes_mias(request):

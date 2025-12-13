@@ -13,4 +13,7 @@ urlpatterns = [
     path('importar/', views.import_inventory, name='import_inventory'),
     path('facturas/', views.facturas_list, name='facturas_list'),
     path('facturas/<int:pk>/', views.factura_detalle, name='factura_detalle'),
+    path("vencidos/", views.insumos_vencidos, name="insumos_vencidos"),
+    path("desechar/", views.desechar_insumo, name="desechar_insumo"),
+    path("desechos/", views.historial_desechos, name="historial_desechos"),
 ]

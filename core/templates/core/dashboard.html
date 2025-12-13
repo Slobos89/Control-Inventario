@@ -64,6 +64,13 @@
                             {{ vencimientos_30_60 }}
                         </span>
                     </div>
+
+                    <div class="list-group-item d-flex justify-content-between align-items-center">
+                      <span>❌ Lotes vencidos (Bodega)</span>
+                      <span class="badge bg-danger">
+                          {{ lotes_vencidos_bodega }}
+                      </span>
+                    </div>
                     {% endif %}
                     {% if user.perfil.rol == "JEFE_FARMACIA" %}
                     <div class="list-group-item d-flex justify-content-between align-items-center">
@@ -83,6 +90,13 @@
                             {{ vencimientos_farmacia_30_60 }}
                         </span>
                     </div> 
+
+                    <div class="list-group-item d-flex justify-content-between align-items-center">
+                      <span>❌ Lotes vencidos (Farmacia)</span>
+                      <span class="badge bg-danger">
+                          {{ lotes_vencidos_farmacia }}
+                      </span>
+                    </div>
                     {% endif %}
                 </div>
             </div>
@@ -131,7 +145,66 @@
   <h4>Panel Jefe de Bodega</h4>
   <div class="row mt-3">
 
-    <div class="col-md-4">
+    
+      <div class="col-md-4">
+        <div class="card p-3">
+          <h6>Vencimientos críticos (&lt; 30 días)</h6>
+
+          {% if lotes_vencen_30 %}
+            <ul class="list-group list-group-flush">
+              {% for lote in lotes_vencen_30 %}
+              <li class="list-group-item d-flex justify-content-between">
+                <span>{{ lote.insumo.nombre }} — <strong>{{ lote.lote }}</strong></span>
+                <span class="badge bg-danger">{{ lote.vencimiento }}</span>
+              </li>
+              {% endfor %}
+            </ul>
+          {% else %}
+            <p class="text-success mb-0">No hay lotes críticos</p>
+          {% endif %}
+        </div>
+      </div>
+
+      <div class="col-md-4">
+        <div class="card p-3">
+          <h6>Vencimientos próximos (30–60 días)</h6>
+
+          {% if lotes_vencen_30_60 %}
+          <ul class="list-group list-group-flush">
+            {% for lote in lotes_vencen_30_60 %}
+            <li class="list-group-item d-flex justify-content-between">
+              <span>{{ lote.insumo.nombre }} — <strong>{{ lote.lote }}</strong></span>
+              <span class="badge bg-warning text-dark">{{ lote.vencimiento }}</span>
+            </li>
+            {% endfor %}
+          </ul>
+          {% else %}
+            <p class="text-success mb-0">No hay lotes próximos a vencer</p>
+          {% endif %}
+        </div>
+      </div>
+      
+
+      <div class="col-md-4">
+        <div class="card p-3">
+          <h6>Lotes vencidos</h6>
+
+          {% if lotes_vencidos_bodega_lista %}
+            <ul class="list-group list-group-flush">
+              {% for lote in lotes_vencidos_bodega_lista %}
+              <li class="list-group-item d-flex justify-content-between">
+                <span>{{ lote.insumo.nombre }} — <strong>{{ lote.lote }}</strong></span>
+                <span class="badge bg-dark">{{ lote.vencimiento }}</span>
+              </li>
+              {% endfor %}
+            </ul>
+          {% else %}
+            <p class="text-success mb-0">No hay lotes vencidos</p>
+          {% endif %}
+        </div>
+      </div>
+    
+  <div class="col-md-12 mt-2">
       <div class="card p-3">
         <h6>Stock insumos bajos</h6>
         <p class="mb-0">
@@ -146,69 +219,20 @@
       </div>
     </div>
 
-    <div class="col-md-4">
-      <div class="card p-3">
-        <h6>Vencimientos críticos (&lt; 30 días)</h6>
-
-        {% if lotes_vencen_30 %}
-          <ul class="list-group list-group-flush">
-            {% for lote in lotes_vencen_30 %}
-            <li class="list-group-item d-flex justify-content-between">
-              <span>{{ lote.insumo.nombre }} — <strong>{{ lote.lote }}</strong></span>
-              <span class="badge bg-danger">{{ lote.vencimiento }}</span>
-            </li>
-            {% endfor %}
-          </ul>
-        {% else %}
-          <p class="text-success mb-0">No hay lotes críticos</p>
-        {% endif %}
-      </div>
-    </div>
-
-    <div class="col-md-4">
-      <div class="card p-3">
-        <h6>Vencimientos próximos (30–60 días)</h6>
-
-        {% if lotes_vencen_30_60 %}
-        <ul class="list-group list-group-flush">
-          {% for lote in lotes_vencen_30_60 %}
-          <li class="list-group-item d-flex justify-content-between">
-            <span>{{ lote.insumo.nombre }} — <strong>{{ lote.lote }}</strong></span>
-            <span class="badge bg-warning text-dark">{{ lote.vencimiento }}</span>
-          </li>
-          {% endfor %}
-        </ul>
-        {% else %}
-          <p class="text-success mb-0">No hay lotes próximos a vencer</p>
-        {% endif %}
-      </div>
+  <div class="col-md-12 mt-1" >
+    <div class="card mt-1 p-3">
+      <h6>Reportes recientes</h6>
+      <a class="btn btn-outline-primary" href="{% url 'reports' %}">Ver reportes</a>
     </div>
   </div>
-
-  <div class="card mt-3 p-3">
-    <h6>Reportes recientes</h6>
-    <a class="btn btn-outline-primary" href="{% url 'reports' %}">Ver reportes</a>
-  </div>
+  
 </div>
 
 {% elif user.perfil.rol == "JEFE_FARMACIA" %}
 <div class="container-fluid mt-3">
   <h4>Panel Jefe de Farmacia</h4>
   <div class="row">
-    <div class="col-md-4">
-      <div class="card p-3">
-        <h6>Stock fármacos bajos</h6>
-        <p class="mb-0">
-          {% if farmacos_criticos_lista %}
-              {% for m in farmacos_criticos_lista %}
-                  {{ m.nombre }}{% if not forloop.last %}, {% endif %}
-              {% endfor %}
-          {% else %}
-              <span class="text-success">No hay fármacos críticos</span>
-          {% endif %}
-        </p>
-      </div>
-    </div>
+    
 
     <div class="col-md-4">
       <div class="card p-3">
@@ -234,26 +258,64 @@
         <h6>Vencimientos próximos (30–60 días)</h6>
 
         {% if lotes_farmacia_vencen_30_60 %}
-        <ul class="list-group list-group-flush">
-          {% for med in lotes_farmacia_vencen_30_60 %}
-          <li class="list-group-item d-flex justify-content-between">
-            <span>{{ med.medicamento.nombre }} — <strong>{{ med.lote }}</strong></span>
-            <span class="badge bg-warning text-dark">{{ med.vencimiento|date:"d/m/Y" }}</span>
-          </li>
-          {% endfor %}
-        </ul>
+          <ul class="list-group list-group-flush">
+            {% for lote in lotes_farmacia_vencen_30_60 %}
+            <li class="list-group-item d-flex justify-content-between">
+              <span>{{ lote.medicamento.nombre }} — <strong>{{ lote.lote }}</strong></span>
+              <span class="badge bg-warning text-dark">{{ lote.vencimiento|date:"d/m/Y" }}</span>
+            </li>
+            {% endfor %}
+          </ul>
         {% else %}
           <p class="text-success mb-0">No hay fármacos próximos</p>
         {% endif %}
       </div>
     </div>
 
+    <div class="col-md-4">
+      <div class="card p-3">
+        <h6>Fármacos vencidos</h6>
+
+        {% if lotes_vencidos_farmacia_lista %}
+          <ul class="list-group list-group-flush">
+            {% for f in lotes_vencidos_farmacia_lista %}
+              <li class="list-group-item d-flex justify-content-between">
+                <span>{{ f.nombre }} — <strong>{{ f.codigo }}</strong></span>
+                <span class="badge bg-danger">{{ f.fecha_vencimiento }}</span>
+              </li>
+            {% endfor %}
+          </ul>
+        {% else %}
+          <p class="text-success mb-0">No hay fármacos vencidos</p>
+        {% endif %}
+      </div>
+    </div>
+
 
   </div>
-  <div class="card mt-3 p-3">
-    <h6>Reportes recientes</h6>
-    <a class="btn btn-outline-primary" href="{% url 'reports' %}">Ver reportes</a>
+
+  <div class="col-md-12 mt-2">
+    <div class="card p-3">
+      <h6>Stock fármacos bajos</h6>
+      <p class="mb-0">
+        {% if farmacos_criticos_lista %}
+            {% for m in farmacos_criticos_lista %}
+                {{ m.nombre }}{% if not forloop.last %}, {% endif %}
+            {% endfor %}
+        {% else %}
+            <span class="text-success">No hay fármacos críticos</span>
+        {% endif %}
+      </p>
+    </div>
   </div>
+
+  <div class="col-md-12 mt-2">
+    <div class="card mt-2 p-3">
+      <h6>Reportes recientes</h6>
+      <a class="btn btn-outline-primary" href="{% url 'reports' %}">Ver reportes</a>
+    </div>
+  </div>
+  
 </div>
 {% endif %}
 

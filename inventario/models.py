@@ -103,7 +103,8 @@ class Movimiento(models.Model):
     TIPO = [
         ("INGRESO", "Ingreso"),
         ("SALIDA", "Salida"),
-        ("AJUSTE", "Ajuste")
+        ("AJUSTE", "Ajuste"),
+        ("DESECHO", "Desecho")
     ]
 
     insumo = models.ForeignKey(Insumo, on_delete=models.CASCADE)
@@ -156,3 +157,24 @@ def review_received(request, factura_id):
         "items": items
     })
 
+class DesechoBodega(models.Model):
+    MOTIVO_CHOICES = [
+        ("VENCIDO", "Producto vencido"),
+        ("DANADO", "Producto dañado"),
+        ("RETIRO_SANITARIO", "Retiro sanitario"),
+        ("OTRO", "Otro"),
+    ]
+
+    insumo = models.ForeignKey(Insumo, on_delete=models.PROTECT)
+    item_factura = models.ForeignKey(
+        ItemFactura, on_delete=models.PROTECT, related_name="desechos"
+    )
+    lote = models.CharField(max_length=100)
+    cantidad = models.PositiveIntegerField()
+    motivo = models.CharField(max_length=30, choices=MOTIVO_CHOICES)
+    observacion = models.TextField(blank=True)
+    usuario = models.ForeignKey(User, on_delete=models.PROTECT)
+    fecha = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Desecho {self.insumo.nombre} - {self.lote}"

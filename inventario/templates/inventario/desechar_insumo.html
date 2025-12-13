@@ -1,0 +1,78 @@
+{% extends "core/base.html" %}
+{% block titlepage %}Registrar desecho{% endblock %}
+
+{% block principal %}
+<div class="container mt-3">
+  <h4>Registrar desecho</h4>
+
+  <div class="card p-3">
+    <form method="post" action="{% url 'inventario:desechar_insumo' %}">
+      {% csrf_token %}
+
+      <!-- SELECT INSUMO -->
+      <div class="mb-3">
+        <label class="form-label">Insumo vencido</label>
+        <select name="item_id" id="itemSelect" class="form-select" required>
+          <option value="">Seleccione un insumo</option>
+          {% for item in vencidos %}
+            <option value="{{ item.id }}"
+                    data-lote="{{ item.lote }}"
+                    data-vencimiento="{{ item.vencimiento }}"
+                    data-cantidad="{{ item.cantidad }}">
+              {{ item.insumo.nombre }} | Lote {{ item.lote }}
+            </option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <!-- INFO DINÁMICA -->
+      <div id="infoItem" class="mb-3" style="display:none;">
+        <p><strong>Lote:</strong> <span id="infoLote"></span></p>
+        <p><strong>Vencimiento:</strong> <span id="infoVencimiento"></span></p>
+        <p><strong>Cantidad disponible:</strong> <span id="infoCantidad"></span></p>
+      </div>
+
+      <div class="mb-2">
+        <label>Cantidad a desechar</label>
+        <input type="number" name="cantidad" class="form-control" min="1" required>
+      </div>
+
+      <div class="mb-2">
+        <label>Motivo</label>
+        <select name="motivo" class="form-select" required>
+          <option value="VENCIDO">Producto vencido</option>
+          <option value="DANADO">Producto dañado</option>
+          <option value="RETIRO_SANITARIO">Retiro sanitario</option>
+          <option value="OTRO">Otro</option>
+        </select>
+      </div>
+
+      <div class="mb-2">
+        <label>Observación</label>
+        <textarea name="observacion" class="form-control" rows="3"></textarea>
+      </div>
+
+      <button class="btn btn-danger">Confirmar desecho</button>
+      <a href="{% url 'inventario:historial_desechos' %}" class="btn btn-secondary">Cancelar</a>
+    </form>
+  </div>
+</div>
+
+<script>
+const select = document.getElementById("itemSelect");
+const info = document.getElementById("infoItem");
+
+select.addEventListener("change", function () {
+  const option = this.selectedOptions[0];
+  if (!option.value) {
+    info.style.display = "none";
+    return;
+  }
+
+  document.getElementById("infoLote").textContent = option.dataset.lote;
+  document.getElementById("infoVencimiento").textContent = option.dataset.vencimiento;
+  document.getElementById("infoCantidad").textContent = option.dataset.cantidad;
+  info.style.display = "block";
+});
+</script>
+{% endblock %}

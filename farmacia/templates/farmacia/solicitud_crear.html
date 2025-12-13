@@ -20,15 +20,17 @@
         </div>
 
         <!-- Items -->
+
         <div class="card">
             <div class="card-header d-flex justify-content-between align-items-center">
                 <span>Insumos solicitados</span>
-                <button type="button" id="add-item" class="btn btn-sm btn-primary">
-                    + Añadir insumo
-                </button>
             </div>
 
             <div class="card-body">
+
+                <!-- 🔥 IMPORTANTE: El management_form va AQUÍ -->
+                {{ formset.management_form }}
+
                 <table class="table table-bordered">
                     <thead>
                         <tr>
@@ -37,24 +39,37 @@
                             <th>Eliminar</th>
                         </tr>
                     </thead>
-                    <tbody id="formset-body">
-                        {{ formset.management_form }}
 
-                        {% for form in formset %}
-                        <tr class="formset-row">
-                            <td>{{ form.insumo }}</td>
-                            <td>{{ form.cantidad }}</td>
+                    <tbody id="items">
+                        <tr>
                             <td>
-                                {% if form.instance.pk %}
-                                    <input type="checkbox" name="{{ form.prefix }}-DELETE">
-                                {% else %}
-                                    <button type="button" class="btn btn-danger btn-sm remove-row">X</button>
-                                {% endif %}
+                                <select class="form-select" name="insumo_1" required>
+                                    <option value="">Seleccione insumo...</option>
+
+                                    {% for insumo in insumos %}
+                                        <option value="{{ insumo.id }}">
+                                            {{ insumo.nombre }}
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                            </td>
+
+                            <td>
+                                <input type="number" class="form-control" min="1" name="cantidad_1" required>
+                            </td>
+
+                            <td>
+                                <button type="button" class="btn btn-danger btn-sm" onclick="removeRow(this)">
+                                ✕
+                                </button>
                             </td>
                         </tr>
-                        {% endfor %}
                     </tbody>
                 </table>
+
+                <button type="button" class="btn btn-outline-primary btn-sm" onclick="addRow()">
+                    ➕ Añadir insumo
+                </button>
             </div>
         </div>
 
@@ -65,36 +80,54 @@
     </form>
 </div>
 
-<!-- Script para agregar filas dinámicamente -->
+
+<!-- ========================== -->
+<!-- JS PARA AGREGAR/QUITAR FILAS -->
+<!-- ========================== -->
 <script>
-document.addEventListener("DOMContentLoaded", function () {
-    const addBtn = document.getElementById("add-item");
-    const tbody = document.getElementById("formset-body");
-    const totalForms = document.getElementById("id_form-TOTAL_FORMS");
+let itemIndex = 2;   // ya existe insumo_1
 
-    addBtn.addEventListener("click", function () {
-        const formIndex = totalForms.value;
-        const emptyRow = `
-            <tr class="formset-row">
-                <td><select name="form-${formIndex}-insumo" class="form-select">
-                    {% for insumo in formset.forms.0.fields.insumo.queryset %}
-                        <option value="{{ insumo.pk }}">{{ insumo.nombre }}</option>
-                    {% endfor %}
-                </select></td>
-                <td><input type="number" name="form-${formIndex}-cantidad" min="1" class="form-control"></td>
-                <td><button type="button" class="btn btn-danger btn-sm remove-row">X</button></td>
-            </tr>
-        `;
-        tbody.insertAdjacentHTML("beforeend", emptyRow);
-        totalForms.value = parseInt(totalForms.value) + 1;
-    });
+function addRow() {
 
-    tbody.addEventListener("click", function (e) {
-        if (e.target.classList.contains("remove-row")) {
-            e.target.closest("tr").remove();
-        }
-    });
-});
+    const selectOptions = `
+        <option value="">Seleccione insumo...</option>
+        {% for insumo in insumos %}
+            <option value="{{ insumo.id }}">{{ insumo.nombre }}</option>
+        {% endfor %}
+    `;
+
+    const row = document.createElement("tr");
+
+    row.innerHTML = `
+        <td>
+            <select class="form-select" name="insumo_${itemIndex}" required>
+                ${selectOptions}
+            </select>
+        </td>
+
+        <td>
+            <input type="number" class="form-control" min="1"
+                   name="cantidad_${itemIndex}" required>
+        </td>
+
+        <td>
+            <button type="button" class="btn btn-danger btn-sm" onclick="removeRow(this)">
+                ✕
+            </button>
+        </td>
+    `;
+
+    document.getElementById("items").appendChild(row);
+
+    itemIndex++;
+}
+
+function removeRow(btn) {
+    let rows = document.querySelectorAll("#items tr");
+    if (rows.length > 1) {
+        btn.closest("tr").remove();
+    }
+}
 </script>
 
 {% endblock %}
